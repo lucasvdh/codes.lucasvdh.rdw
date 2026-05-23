@@ -18,5 +18,9 @@
   "0.3.0": {
     "en": "Add validation message translations and new insurance trigger and condition",
     "nl": "Voeg vertalingen toe voor validatiemeldingen en nieuwe verzekeringstrigger en condities"
+  },
+  "0.3.1": {
+    "en": "Fix a crash when the APK expiry date changed trigger fired",
+    "nl": "Los een crash op bij het activeren van de trigger voor gewijzigde APK-vervaldatum"
   }
 }

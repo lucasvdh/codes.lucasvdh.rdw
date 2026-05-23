@@ -115,16 +115,16 @@ class VehicleDriver extends Driver {
 
   public triggerAPKExpiryDateChangedTrigger(device: VehicleDevice, args: { date: string }) {
     this.apkExpiryDateChangedTrigger?.trigger(device, {
-      date: args.date,
-    });
+      new_date: args.date,
+    }).catch(this.error);
   }
 
   public triggerOpenRecallTrigger(device: VehicleDevice) {
-    this.openRecallTrigger?.trigger(device);
+    this.openRecallTrigger?.trigger(device).catch(this.error);
   }
 
   public triggerInsuranceHasExpiredTrigger(device: VehicleDevice) {
-    this.insuranceHasExpiredTrigger?.trigger(device);
+    this.insuranceHasExpiredTrigger?.trigger(device).catch(this.error);
   }
 
   public triggerAPKExpiryTriggers(device: VehicleDevice, args: { date: string }) {
@@ -148,12 +148,12 @@ class VehicleDriver extends Driver {
     }
 
     if (daysUntilAPK <= 0) {
-      this.apkExpiredTrigger?.trigger(device);
+      this.apkExpiredTrigger?.trigger(device).catch(this.error);
     }
 
     this.upcomingAPKExpiryDateTrigger?.trigger(device, undefined, {
       days_until_apk: daysUntilAPK,
-    });
+    }).catch(this.error);
   }
 
   private calculateDaysUntilFutureDate(dateString: string) {
