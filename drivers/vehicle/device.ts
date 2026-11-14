@@ -50,7 +50,7 @@ class VehicleDevice extends Homey.Device {
     try {
       vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
     } catch (err) {
-      await this.applyWarning(this.health.failed());
+      await this.applyWarning(this.health.failed(Date.now()));
       throw err;
     }
     if (vehicle === undefined) {

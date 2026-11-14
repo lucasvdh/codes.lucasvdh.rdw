@@ -5,25 +5,26 @@ export type WarningChange = { set: WarningKey } | { clear: true } | undefined;
 
 /** Turns sync outcomes into device warning changes, so a warning only changes when the state does. */
 export class SyncHealth {
-  static readonly FAILURES_BEFORE_WARNING = 5;
+  /** How long syncs must keep failing before the values count as outdated. */
+  static readonly UNREACHABLE_AFTER_MS = 24 * 60 * 60 * 1000;
 
   /** "unknown" until the first outcome, so a warning shown from before a restart gets cleared. */
   private warning: WarningKey | undefined | "unknown" = "unknown";
-  private failures = 0;
+  private failingSince: number | undefined;
 
   succeeded(): WarningChange {
-    this.failures = 0;
+    this.failingSince = undefined;
     return this.change(undefined);
   }
 
   notFound(): WarningChange {
-    this.failures = 0;
+    this.failingSince = undefined;
     return this.change("device.warning.vehicle_not_found");
   }
 
-  failed(_now?: number): WarningChange {
-    this.failures++;
-    if (this.failures < SyncHealth.FAILURES_BEFORE_WARNING) return undefined;
+  failed(now: number): WarningChange {
+    this.failingSince ??= now;
+    if (now - this.failingSince < SyncHealth.UNREACHABLE_AFTER_MS) return undefined;
     return this.change("device.warning.rdw_unreachable");
   }
 
