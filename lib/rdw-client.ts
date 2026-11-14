@@ -1,6 +1,7 @@
 import http from "http";
 import https from "https";
 import { RdwHttpError, RdwRateLimitError, RdwResponseError, RdwTimeoutError } from "./errors";
+import { normalizeLicensePlate } from "./license-plate";
 import { parseVehicleResponse, type VehicleRecord } from "./vehicle";
 
 export const RDW_BASE_URL = "https://opendata.rdw.nl";
@@ -34,8 +35,11 @@ export class RdwClient {
     this.now = options.now ?? Date.now;
   }
 
+  /** Undefined when the RDW has no vehicle for the plate, or the input contains no usable plate. */
   async fetchVehicle(licensePlate: string): Promise<VehicleRecord | undefined> {
-    const where = `(UPPER(kenteken)=UPPER(%27${encodeURIComponent(licensePlate)}%27))`;
+    const plate = normalizeLicensePlate(licensePlate);
+    if (plate === undefined) return undefined;
+    const where = `(UPPER(kenteken)=UPPER(%27${plate}%27))`;
     const body = await this.getJson(`${this.baseUrl}${VEHICLES_PATH}?$where=${where}`);
     return parseVehicleResponse(body);
   }
