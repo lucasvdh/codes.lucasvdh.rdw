@@ -12,4 +12,9 @@ describe("pairedVehicle", () => {
       store: { license_plate: "AE01IO", apk_expiry_date: "20270115" },
     });
   });
+
+  it("names a vehicle without a model after its brand, and one without either after its plate", () => {
+    assert.equal(pairedVehicle(vehicle({ handelsbenaming: "" }), "AE01IO").name, "TESTMERK");
+    assert.equal(pairedVehicle(vehicle({ merk: "", handelsbenaming: "" }), "AE01IO").name, "AE01IO");
+  });
 });
