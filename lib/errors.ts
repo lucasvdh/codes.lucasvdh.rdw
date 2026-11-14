@@ -21,3 +21,10 @@ export class RdwTimeoutError extends RdwError {
     super(`RDW did not answer within ${timeoutMs} ms`);
   }
 }
+
+/** RDW is throttling us (429) or is temporarily down (503); `retryAfterMs` comes from Retry-After. */
+export class RdwRateLimitError extends RdwHttpError {
+  constructor(statusCode: number, readonly retryAfterMs?: number) {
+    super(statusCode);
+  }
+}

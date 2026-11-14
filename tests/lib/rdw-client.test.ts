@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { RdwHttpError, RdwResponseError, RdwTimeoutError } from "../../lib/errors";
+import { RdwHttpError, RdwRateLimitError, RdwResponseError, RdwTimeoutError } from "../../lib/errors";
 import { RdwClient } from "../../lib/rdw-client";
 import { fakeServer, json, type FakeServer } from "../helpers/fake-server";
 import { vehicleResponse } from "../helpers/fixtures";
@@ -44,5 +44,24 @@ describe("RdwClient.fetchVehicle", () => {
   it("gives up on a response that stops halfway", async () => {
     server = await fakeServer(() => "stall");
     await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
+  });
+
+  it("reports how long to wait when RDW throttles with Retry-After in seconds", async () => {
+    server = await fakeServer(() => ({ status: 429, headers: { "retry-after": "120" } }));
+    await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), (err: unknown) =>
+      err instanceof RdwRateLimitError && err.retryAfterMs === 120_000);
+  });
+
+  it("reads a Retry-After date on a 503", async () => {
+    const now = Date.parse("2026-06-01T12:00:00Z");
+    server = await fakeServer(() => ({ status: 503, headers: { "retry-after": "Mon, 01 Jun 2026 12:05:00 GMT" } }));
+    await assert.rejects(new RdwClient({ baseUrl: server.url, now: () => now }).fetchVehicle("AE01IO"), (err: unknown) =>
+      err instanceof RdwRateLimitError && err.retryAfterMs === 300_000);
+  });
+
+  it("throttles without a usable Retry-After", async () => {
+    server = await fakeServer(() => ({ status: 429, headers: { "retry-after": "soon" } }));
+    await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), (err: unknown) =>
+      err instanceof RdwRateLimitError && err.retryAfterMs === undefined);
   });
 });
