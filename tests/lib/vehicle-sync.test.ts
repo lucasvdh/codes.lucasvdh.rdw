@@ -70,6 +70,25 @@ describe("planVehicleSync: insurance and recall triggers", () => {
   });
 });
 
+describe("planVehicleSync: vehicles without an APK date (mopeds, trailers)", () => {
+  const noApk = vehicle({ vervaldatum_apk: "", handelsbenaming: "" });
+
+  it("leaves missing values empty instead of showing placeholders", () => {
+    const { capabilities } = planVehicleSync(SAME, noApk, NOW, TZ);
+    assert.equal(capabilities.apk_expiry_date, null);
+    assert.equal(capabilities.trade_name, null);
+  });
+
+  it("does not fire 'expiry date changed' when the date disappears", () => {
+    assert.deepEqual(types(planVehicleSync(SAME, noApk, NOW, TZ).events), []);
+  });
+
+  it("fires 'expiry date changed' when a vehicle gets its first APK date", () => {
+    const events = planVehicleSync({ ...SAME, apkExpiryDate: "" }, vehicle(), NOW, TZ).events;
+    assert.ok(types(events).includes("apk_expiry_date_changed"));
+  });
+});
+
 describe("planVehicleSync: APK days and notifications", () => {
   const EXPIRY = { vervaldatum_apk: "20261120" };
   const daysUntilApk = (events: SyncEvent[]) =>
