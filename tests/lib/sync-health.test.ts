@@ -7,10 +7,11 @@ describe("SyncHealth", () => {
     assert.deepEqual(new SyncHealth().notFound(), { set: "device.warning.vehicle_not_found" });
   });
 
-  it("warns only after several failed syncs in a row", () => {
+  it("warns once syncs have kept failing for a day", () => {
     const health = new SyncHealth();
-    for (let i = 1; i < SyncHealth.FAILURES_BEFORE_WARNING; i++) assert.equal(health.failed(), undefined);
-    assert.deepEqual(health.failed(), { set: "device.warning.rdw_unreachable" });
+    assert.equal(health.failed(0), undefined);
+    assert.equal(health.failed(SyncHealth.UNREACHABLE_AFTER_MS - 1), undefined);
+    assert.deepEqual(health.failed(SyncHealth.UNREACHABLE_AFTER_MS), { set: "device.warning.rdw_unreachable" });
   });
 
   it("clears the warning after a successful sync, once", () => {
@@ -30,11 +31,11 @@ describe("SyncHealth", () => {
     assert.deepEqual(new SyncHealth().succeeded(), { clear: true });
   });
 
-  it("starts counting failures again after a success", () => {
+  it("measures the outage from the first failure after a success", () => {
     const health = new SyncHealth();
-    for (let i = 1; i < SyncHealth.FAILURES_BEFORE_WARNING; i++) health.failed();
+    health.failed(0);
     health.succeeded();
-    assert.equal(health.failed(), undefined);
+    assert.equal(health.failed(SyncHealth.UNREACHABLE_AFTER_MS), undefined);
   });
 
   it("does not warn about a short outage, however many retries it takes", () => {
