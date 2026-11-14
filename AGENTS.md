@@ -199,6 +199,6 @@ Details: `docs/release-process.md`.
 - `docs/testing-conventions.md`: test setup, what to test, fakes, regression tests, CI
 - `docs/homey-platform.md`: how Homey works (platforms, Node versions, sandbox, Compose, limits, Cloud vs Pro)
 - `docs/app-store-guidelines.md`: official store rules plus the unwritten ones that cause rejections
-- `docs/release-process.md`: versioning, changelog, channels, publishing (workflow, manual fallback)
+- `docs/release-process.md`: versioning, changelog, channels, publishing (locally, no publish workflow)
 - `docs/agent-tooling.md`: Homey Developer MCP and Discourse MCP, what agents may and may not do
 - `docs/community-and-support.md`: forum topic conventions, reply templates, issue triage
