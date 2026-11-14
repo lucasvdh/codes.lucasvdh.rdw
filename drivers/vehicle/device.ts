@@ -1,4 +1,5 @@
 import Homey from "homey";
+import { PollLoop } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
 import { planVehicleSync, STORE, type CapabilityValues, type VehicleSnapshot } from "../../lib/vehicle-sync";
 import type { VehicleDriver } from "./driver";
@@ -8,27 +9,27 @@ const ADDED_IN_0_2_0 = ["open_recall_indicator"];
 
 class VehicleDevice extends Homey.Device {
   private readonly client = new RdwClient();
-  private interval?: NodeJS.Timeout;
+  private loop?: PollLoop;
 
   async onInit(): Promise<void> {
     await this.migrate();
-    this.interval = this.homey.setInterval(() => this.syncInBackground(), SYNC_INTERVAL_MS);
-    this.syncInBackground();
+    this.loop = new PollLoop(() => this.sync(), {
+      intervalMs: SYNC_INTERVAL_MS,
+      timers: this.homey,
+      log: (...args) => this.error(...args),
+    });
+    this.loop.start();
     await this.setAvailable().catch(this.error);
   }
 
   async onUninit(): Promise<void> {
-    this.homey.clearInterval(this.interval);
+    this.loop?.stop();
   }
 
   private async migrate(): Promise<void> {
     for (const capability of ADDED_IN_0_2_0) {
       if (!this.hasCapability(capability)) await this.addCapability(capability).catch(this.error);
     }
-  }
-
-  private syncInBackground(): void {
-    this.sync().catch((err) => this.error("[sync] failed", err));
   }
 
   private async sync(): Promise<void> {
