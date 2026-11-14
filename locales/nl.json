@@ -17,7 +17,8 @@
   "device": {
     "warning": {
       "vehicle_not_found": "De RDW heeft geen gegevens meer voor dit kenteken. Het voertuig is mogelijk geëxporteerd of gesloopt.",
-      "rdw_unreachable": "De RDW is al een tijd niet bereikbaar. De getoonde gegevens zijn mogelijk verouderd."
+      "rdw_unreachable": "De RDW is al een tijd niet bereikbaar. De getoonde gegevens zijn mogelijk verouderd.",
+      "rdw_rejected": "De RDW weigert de aanvraag voor dit voertuig. Stuur een diagnoserapport via de app-instellingen."
     }
   },
   "messages": {

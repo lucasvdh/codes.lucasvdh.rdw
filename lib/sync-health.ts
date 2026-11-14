@@ -1,4 +1,7 @@
-export type WarningKey = "device.warning.vehicle_not_found" | "device.warning.rdw_unreachable";
+export type WarningKey =
+  | "device.warning.vehicle_not_found"
+  | "device.warning.rdw_unreachable"
+  | "device.warning.rdw_rejected";
 
 /** What to do with the device warning: set one, clear it, or leave it as it is (undefined). */
 export type WarningChange = { set: WarningKey } | { clear: true } | undefined;
@@ -31,8 +34,10 @@ export class SyncHealth {
     return this.change("device.warning.vehicle_not_found");
   }
 
+  /** The RDW answered, but refuses this request on every try (a 400). */
   rejected(): WarningChange {
-    return undefined;
+    this.failingSince = undefined;
+    return this.change("device.warning.rdw_rejected");
   }
 
   failed(now: number): WarningChange {
