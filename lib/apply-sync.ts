@@ -8,7 +8,11 @@ export interface SyncTarget {
 }
 
 /** Triggers fire last: conditions in the triggered Flows read the capabilities and the store. */
-export async function applySyncPlan(plan: SyncPlan, target: SyncTarget): Promise<void> {
+export async function applySyncPlan(
+  plan: SyncPlan,
+  target: SyncTarget,
+  _isCurrent: () => boolean = () => true,
+): Promise<void> {
   for (const [id, value] of Object.entries(plan.capabilities) as [keyof CapabilityValues, string | null][]) {
     await target.setCapability(id, value);
   }

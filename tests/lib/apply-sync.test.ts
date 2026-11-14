@@ -25,4 +25,25 @@ describe("applySyncPlan", () => {
     assert.ok(steps.includes("fire:apk_expiry_date_changed"));
     assert.ok(lastWrite < firstFire, steps.join(", "));
   });
+
+  it("stops writing and firing as soon as the sync is no longer current (vehicle deleted mid-sync)", async () => {
+    const steps: string[] = [];
+    let current = true;
+    const plan = planVehicleSync({}, vehicle(), new Date("2026-06-01T12:00:00Z"), "Europe/Amsterdam");
+
+    await applySyncPlan(
+      plan,
+      {
+        setCapability: async (id) => {
+          steps.push(`capability:${id}`);
+          current = false;
+        },
+        saveSnapshot: async () => { steps.push("snapshot"); },
+        fire: async (event) => { steps.push(`fire:${event.type}`); },
+      },
+      () => current,
+    );
+
+    assert.deepEqual(steps, ["capability:license_plate"]);
+  });
 });
