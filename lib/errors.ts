@@ -7,10 +7,12 @@ export class RdwError extends Error {
 
 /** RDW answered with a status the app can't use. */
 export class RdwHttpError extends RdwError {
-  readonly retryable: boolean = true;
+  /** Server errors, timeouts and throttling can pass; other client errors repeat on every retry. */
+  readonly retryable: boolean;
 
   constructor(readonly statusCode: number) {
     super(`RDW responded with HTTP ${statusCode}`);
+    this.retryable = statusCode >= 500 || statusCode === 408 || statusCode === 429;
   }
 }
 

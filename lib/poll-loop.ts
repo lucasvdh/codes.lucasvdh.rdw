@@ -21,6 +21,11 @@ export interface RetryAfter {
   retryAfterMs: number;
 }
 
+/** A failure that will repeat on every retry, e.g. a 400. */
+function isPermanent(err: unknown): boolean {
+  return (err as { retryable?: unknown } | undefined)?.retryable === false;
+}
+
 function retryAfterOf(err: unknown): number {
   const ms = (err as Partial<RetryAfter> | undefined)?.retryAfterMs;
   return typeof ms === "number" && Number.isFinite(ms) && ms > 0 ? ms : 0;
@@ -74,7 +79,9 @@ export class PollLoop {
       delayMs = this.withJitter(this.options.intervalMs);
     } catch (err) {
       this.failures++;
-      delayMs = Math.max(this.backoffMs(), Math.min(retryAfterOf(err), this.options.intervalMs));
+      delayMs = isPermanent(err)
+        ? this.withJitter(this.options.intervalMs)
+        : Math.max(this.backoffMs(), Math.min(retryAfterOf(err), this.options.intervalMs));
       this.options.log(`[poll] run failed (${this.failures}x), retrying in ${Math.round(delayMs / 1000)} s`, err);
     }
     if (this.isCurrent(generation)) this.schedule(delayMs);
