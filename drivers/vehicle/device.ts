@@ -1,7 +1,9 @@
 import Homey from "homey";
 import { PollLoop } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
+import { SyncHealth, type WarningChange } from "../../lib/sync-health";
 import { planVehicleSync, STORE, type CapabilityValues, type VehicleSnapshot } from "../../lib/vehicle-sync";
+import type { VehicleRecord } from "../../lib/vehicle";
 import type { VehicleDriver } from "./driver";
 
 const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -11,6 +13,7 @@ const ADDED_IN_0_2_0 = ["open_recall_indicator"];
 class VehicleDevice extends Homey.Device {
   private readonly client = new RdwClient();
   private loop?: PollLoop;
+  private readonly health = new SyncHealth();
 
   async onInit(): Promise<void> {
     await this.migrate();
@@ -44,8 +47,19 @@ class VehicleDevice extends Homey.Device {
 
   private async sync(): Promise<void> {
     this.log("[sync] fetching vehicle data from RDW");
-    const vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
-    if (vehicle === undefined) throw new Error("Vehicle not found");
+    let vehicle: VehicleRecord | undefined;
+    try {
+      vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
+    } catch (err) {
+      await this.applyWarning(this.health.failed());
+      throw err;
+    }
+    if (vehicle === undefined) {
+      this.log("[sync] the RDW has no vehicle for this plate");
+      await this.applyWarning(this.health.notFound());
+      return;
+    }
+    await this.applyWarning(this.health.succeeded());
 
     const plan = planVehicleSync(this.snapshot(), vehicle, new Date(), this.homey.clock.getTimezone());
     await this.setCapabilities(plan.capabilities);
@@ -59,6 +73,12 @@ class VehicleDevice extends Homey.Device {
     await this.setStoreValue(STORE.OPEN_RECALL, plan.snapshot.openRecall).catch(this.error);
     await this.setStoreValue(STORE.IS_INSURED, plan.snapshot.isInsured).catch(this.error);
     await this.setStoreValue(STORE.LAST_DAILY_CHECK, plan.snapshot.lastDailyCheck).catch(this.error);
+  }
+
+  private async applyWarning(change: WarningChange): Promise<void> {
+    if (change === undefined) return;
+    if ("set" in change) await this.setWarning(this.homey.__(change.set)).catch(this.error);
+    else await this.unsetWarning().catch(this.error);
   }
 
   private snapshot(): VehicleSnapshot {

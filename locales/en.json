@@ -13,6 +13,12 @@
     "license_plate_missing": "Enter a license plate first.",
     "rdw_unavailable": "The RDW could not be reached. Please try again later."
   },
+  "device": {
+    "warning": {
+      "vehicle_not_found": "The RDW no longer has data for this license plate. The vehicle may have been exported or scrapped.",
+      "rdw_unreachable": "The RDW could not be reached for a while. The values shown may be outdated."
+    }
+  },
   "messages": {
     "expires_in_a_month": "The APK of __licensePlate__ expires in a month",
     "has_expired": "The APK of __licensePlate__ has expired",

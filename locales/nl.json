@@ -13,6 +13,12 @@
     "license_plate_missing": "Vul eerst een kenteken in.",
     "rdw_unavailable": "De RDW is niet bereikbaar. Probeer het later opnieuw."
   },
+  "device": {
+    "warning": {
+      "vehicle_not_found": "De RDW heeft geen gegevens meer voor dit kenteken. Het voertuig is mogelijk geëxporteerd of gesloopt.",
+      "rdw_unreachable": "De RDW is al een tijd niet bereikbaar. De getoonde gegevens zijn mogelijk verouderd."
+    }
+  },
   "messages": {
     "expires_in_a_month": "De APK van __licensePlate__ verloopt over een maand",
     "has_expired": "De APK van __licensePlate__ is verlopen",
