@@ -12,6 +12,13 @@ export class SyncHealth {
   private warning: WarningKey | undefined | "unknown" = "unknown";
   private failingSince: number | undefined;
 
+  constructor(_failingSince?: number) {}
+
+  /** Start of the current outage, to keep in the device store across app restarts. */
+  get outageStart(): number | undefined {
+    return this.failingSince;
+  }
+
   succeeded(): WarningChange {
     this.failingSince = undefined;
     return this.change(undefined);

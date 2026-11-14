@@ -43,4 +43,18 @@ describe("SyncHealth", () => {
     const minute = 60_000;
     for (const at of [0, 1, 3, 7, 15, 31, 63].map((m) => m * minute)) assert.equal(health.failed(at), undefined);
   });
+
+  it("keeps measuring an outage across app restarts", () => {
+    const outageStart = 1_000_000;
+    const afterRestart = new SyncHealth(outageStart);
+    assert.deepEqual(afterRestart.failed(outageStart + SyncHealth.UNREACHABLE_AFTER_MS), {
+      set: "device.warning.rdw_unreachable",
+    });
+  });
+
+  it("starts the outage again when the clock jumped back", () => {
+    const health = new SyncHealth(10 * SyncHealth.UNREACHABLE_AFTER_MS);
+    assert.equal(health.failed(0), undefined);
+    assert.equal(health.outageStart, 0);
+  });
 });
