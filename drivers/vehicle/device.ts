@@ -13,10 +13,11 @@ const ADDED_IN_0_2_0 = ["open_recall_indicator"];
 class VehicleDevice extends Homey.Device {
   private readonly client = new RdwClient();
   private loop?: PollLoop;
-  private readonly health = new SyncHealth();
+  private health = new SyncHealth();
 
   async onInit(): Promise<void> {
     await this.migrate();
+    this.health = new SyncHealth((this.getStoreValue(STORE.OUTAGE_START) as number | null) ?? undefined);
     this.loop = new PollLoop((run) => this.sync(run), {
       ...SYNC_SCHEDULE,
       timers: this.homey,
@@ -77,6 +78,10 @@ class VehicleDevice extends Homey.Device {
   }
 
   private async applyWarning(change: WarningChange): Promise<void> {
+    const outageStart = this.health.outageStart ?? null;
+    if (this.getStoreValue(STORE.OUTAGE_START) !== outageStart) {
+      await this.setStoreValue(STORE.OUTAGE_START, outageStart).catch(this.error);
+    }
     if (change === undefined) return;
     if ("set" in change) await this.setWarning(this.homey.__(change.set)).catch(this.error);
     else await this.unsetWarning().catch(this.error);
