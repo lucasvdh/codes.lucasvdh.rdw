@@ -31,14 +31,19 @@ export interface VehicleSnapshot {
   lastDailyCheck?: string;
 }
 
+/** null clears a capability: the RDW has no value for it. */
 export interface CapabilityValues {
   license_plate: string;
-  vehicle_type: string;
-  brand: string;
-  trade_name: string;
-  is_insured: string;
-  apk_expiry_date: string;
-  open_recall_indicator: string;
+  vehicle_type: string | null;
+  brand: string | null;
+  trade_name: string | null;
+  is_insured: string | null;
+  apk_expiry_date: string | null;
+  open_recall_indicator: string | null;
+}
+
+function orNull(value: string): string | null {
+  return value === "" ? null : value;
 }
 
 export type NotificationKey = "messages.has_expired" | "messages.expires_in_a_month";
@@ -103,7 +108,7 @@ export function planVehicleSync(
     events.push(...dailyApkEvents(expiry, today, lastCheck));
   }
 
-  if (previous.apkExpiryDate !== undefined && previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
+  if (expiry && previous.apkExpiryDate !== undefined && previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
     events.push({ type: "apk_expiry_date_changed", newDate: formatApkDate(vehicle.vervaldatum_apk) });
   }
   if (changedTo(previous.openRecall, vehicle.openstaande_terugroepactie_indicator, RDW_YES)) {
@@ -116,12 +121,12 @@ export function planVehicleSync(
   return {
     capabilities: {
       license_plate: vehicle.kenteken,
-      vehicle_type: vehicle.voertuigsoort,
-      brand: vehicle.merk,
-      trade_name: vehicle.handelsbenaming,
-      is_insured: vehicle.wam_verzekerd,
-      apk_expiry_date: formatApkDate(vehicle.vervaldatum_apk),
-      open_recall_indicator: vehicle.openstaande_terugroepactie_indicator,
+      vehicle_type: orNull(vehicle.voertuigsoort),
+      brand: orNull(vehicle.merk),
+      trade_name: orNull(vehicle.handelsbenaming),
+      is_insured: orNull(vehicle.wam_verzekerd),
+      apk_expiry_date: expiry ? formatApkDate(vehicle.vervaldatum_apk) : null,
+      open_recall_indicator: orNull(vehicle.openstaande_terugroepactie_indicator),
     },
     events,
     snapshot: {
