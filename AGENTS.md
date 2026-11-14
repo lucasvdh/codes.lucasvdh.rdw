@@ -11,7 +11,7 @@ Keep both in sync when a rule changes.
 - **App:** RDW (`codes.lucasvdh.rdw`), Homey SDK v3, TypeScript, Node.js runtime.
 - **What it does:** adds a Dutch vehicle as a device by its license plate, shows its APK expiry date, insurance and open-recall status from RDW open data, and fires Flow triggers and notifications when they change.
 - **Platforms:** `local`. Connectivity: `cloud` (two HTTPS requests per vehicle per day to the public RDW API; no account, no key).
-- **Minimum Homey version:** `>=5.0.0`, but the build targets Node 18 (`@tsconfig/node18`). Raising it to `>=12.9.0` and moving to `@tsconfig/node22` is proposed and waits for the maintainer.
+- **Minimum Homey version:** `>=12.9.0` (from 12.9.0 on, apps run on Node 22 on every platform). The build targets `@tsconfig/node22`.
 - **Supported languages:** `en, nl`. Every user-facing string exists in both.
 - **Community topic:** https://community.homey.app/t/92575 (`homeyCommunityTopicId` in the manifest).
 - **Store pages:** https://homey.app/a/codes.lucasvdh.rdw (live), https://homey.app/a/codes.lucasvdh.rdw/test (test).
