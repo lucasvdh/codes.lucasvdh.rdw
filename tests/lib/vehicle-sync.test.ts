@@ -50,6 +50,25 @@ describe("planVehicleSync", () => {
   });
 });
 
+describe("planVehicleSync: insurance and recall triggers", () => {
+  it("fires insurance-has-expired when the insurance ends (Ja to Nee)", () => {
+    const events = planVehicleSync(SAME, vehicle({ wam_verzekerd: "Nee" }), NOW).events;
+    assert.ok(types(events).includes("insurance_has_expired"));
+  });
+
+  it("does not fire insurance-has-expired when the insurance starts (Nee to Ja)", () => {
+    const events = planVehicleSync({ ...SAME, isInsured: "Nee" }, vehicle(), NOW).events;
+    assert.ok(!types(events).includes("insurance_has_expired"));
+  });
+
+  it("does not fire change triggers on the first sync after pairing", () => {
+    const firstSync = { apkExpiryDate: "20270115" };
+    const uninsuredWithRecall = vehicle({ wam_verzekerd: "Nee", openstaande_terugroepactie_indicator: "Ja" });
+    assert.deepEqual(types(planVehicleSync(firstSync, vehicle(), NOW).events), ["upcoming_apk_expiry_date"]);
+    assert.deepEqual(types(planVehicleSync(firstSync, uninsuredWithRecall, NOW).events), ["upcoming_apk_expiry_date"]);
+  });
+});
+
 describe("matchesUpcomingApk", () => {
   it("matches when the APK expires within the Flow's number of days", () => {
     assert.equal(matchesUpcomingApk(7, 7), true);
