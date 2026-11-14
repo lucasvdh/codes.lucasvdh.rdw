@@ -24,7 +24,10 @@ describe("SyncHealth", () => {
     const health = new SyncHealth();
     health.notFound();
     assert.equal(health.notFound(), undefined);
-    assert.equal(new SyncHealth().succeeded(), undefined);
+  });
+
+  it("clears a warning left from before a restart on the first successful sync", () => {
+    assert.deepEqual(new SyncHealth().succeeded(), { clear: true });
   });
 
   it("starts counting failures again after a success", () => {
