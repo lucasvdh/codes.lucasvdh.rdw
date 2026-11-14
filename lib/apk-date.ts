@@ -13,11 +13,7 @@ export function parseRdwDate(rdwDate: string): CalendarDate | undefined {
   return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
 }
 
-/** Flow tokens and capabilities show `yyyy-mm-dd`. */
-export function formatApkDate(rdwDate: string): string {
-  return `${rdwDate.substring(0, 4)}-${rdwDate.substring(4, 6)}-${rdwDate.substring(6, 8)}`;
-}
-
+/** `yyyy-mm-dd`, as Flow tokens and capabilities show dates. */
 export function isoDate(date: CalendarDate): string {
   const pad = (n: number, width: number) => String(n).padStart(width, "0");
   return `${pad(date.year, 4)}-${pad(date.month, 2)}-${pad(date.day, 2)}`;

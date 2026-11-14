@@ -1,7 +1,6 @@
 import {
   calendarDateIn,
   daysBetween,
-  formatApkDate,
   isoDate,
   parseIsoDate,
   parseRdwDate,
@@ -109,7 +108,7 @@ export function planVehicleSync(
   }
 
   if (expiry && previous.apkExpiryDate !== undefined && previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
-    events.push({ type: "apk_expiry_date_changed", newDate: formatApkDate(vehicle.vervaldatum_apk) });
+    events.push({ type: "apk_expiry_date_changed", newDate: isoDate(expiry) });
   }
   if (changedTo(previous.openRecall, vehicle.openstaande_terugroepactie_indicator, RDW_YES)) {
     events.push({ type: "open_recall" });
@@ -125,7 +124,7 @@ export function planVehicleSync(
       brand: orNull(vehicle.merk),
       trade_name: orNull(vehicle.handelsbenaming),
       is_insured: orNull(vehicle.wam_verzekerd),
-      apk_expiry_date: expiry ? formatApkDate(vehicle.vervaldatum_apk) : null,
+      apk_expiry_date: expiry ? isoDate(expiry) : null,
       open_recall_indicator: orNull(vehicle.openstaande_terugroepactie_indicator),
     },
     events,
