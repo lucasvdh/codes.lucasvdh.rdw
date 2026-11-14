@@ -11,6 +11,7 @@ export interface RdwClientOptions {
   baseUrl?: string;
   /** Deadline for the whole request, from connecting to the last byte. */
   timeoutMs?: number;
+  now?: () => number;
 }
 
 export class RdwClient {
