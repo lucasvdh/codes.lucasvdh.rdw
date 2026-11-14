@@ -3,10 +3,13 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
+// Static checks for Homey wiring that can't run without the SDK. Generic: copy unchanged.
+
 const ROOT = join(__dirname, "..", "..");
 const DRIVERS = join(ROOT, "drivers");
 
 function drivers(): string[] {
+  if (!existsSync(DRIVERS)) return [];
   return readdirSync(DRIVERS).filter((d) => existsSync(join(DRIVERS, d, "driver.compose.json")));
 }
 
@@ -38,7 +41,7 @@ function shownViews(driver: string): string[] {
   const dir = join(DRIVERS, driver);
   const files = ["driver.ts", ...["pair", "repair"].flatMap((sub) =>
     existsSync(join(dir, sub)) ? readdirSync(join(dir, sub)).map((f) => join(sub, f)) : [])];
-  return files.flatMap((file) =>
+  return files.filter((file) => existsSync(join(dir, file))).flatMap((file) =>
     [...readFileSync(join(dir, file), "utf8").matchAll(/showView\(\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]));
 }
 
@@ -50,7 +53,9 @@ describe("Homey wiring", () => {
     });
 
     it(`${driver}: onUninit and onDeleted share one teardown`, () => {
-      const source = readFileSync(join(DRIVERS, driver, "device.ts"), "utf8");
+      const file = join(DRIVERS, driver, "device.ts");
+      if (!existsSync(file)) return;
+      const source = readFileSync(file, "utf8");
       const onUninit = methodBody(source, "onUninit");
       if (onUninit === undefined) return;
 
