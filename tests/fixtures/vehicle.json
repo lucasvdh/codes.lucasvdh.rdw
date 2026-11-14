@@ -1,0 +1,14 @@
+[
+  {
+    "kenteken": "AE01IO",
+    "voertuigsoort": "Personenauto",
+    "merk": "TESTMERK",
+    "handelsbenaming": "MODEL X",
+    "vervaldatum_apk": "20270115",
+    "datum_tenaamstelling": "20200101",
+    "wam_verzekerd": "Ja",
+    "openstaande_terugroepactie_indicator": "Nee",
+    "vervaldatum_apk_dt": "2027-01-15T00:00:00.000",
+    "api_gekentekende_voertuigen_assen": "https://opendata.rdw.nl/resource/3huj-srit.json"
+  }
+]
