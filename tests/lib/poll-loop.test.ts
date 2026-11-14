@@ -28,4 +28,80 @@ describe("PollLoop", () => {
     assert.equal(timers.delays().length, 1);
     assert.ok(timers.delays()[0] <= HOUR_MS, `next run in ${timers.delays()[0]} ms`);
   });
+
+  it("doubles the retry delay per failure up to the maximum", async () => {
+    const timers = new FakeTimers();
+    const { task } = failingThenOk(10);
+    const options = { intervalMs: DAY_MS, timers, log: () => {}, retryBaseMs: 1000, retryMaxMs: 8000, random: () => 1 };
+    new PollLoop(task, options).start();
+
+    const delays: number[] = [];
+    await timers.advance(0);
+    for (let i = 0; i < 5; i++) {
+      delays.push(timers.delays()[0]);
+      await timers.advance(timers.delays()[0]);
+    }
+    assert.deepEqual(delays, [1000, 2000, 4000, 8000, 8000]);
+  });
+
+  it("goes back to the daily interval after a successful retry", async () => {
+    const timers = new FakeTimers();
+    const { task, calls } = failingThenOk(2);
+    new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {}, random: () => 1 }).start();
+    await timers.advance(0);
+    await timers.advance(timers.delays()[0]);
+    await timers.advance(timers.delays()[0]);
+
+    assert.equal(calls(), 3);
+    assert.deepEqual(timers.delays(), [DAY_MS]);
+  });
+
+  it("waits at least as long as a Retry-After asks", async () => {
+    const timers = new FakeTimers();
+    const rateLimited = async () => {
+      throw Object.assign(new Error("429"), { retryAfterMs: 2 * HOUR_MS });
+    };
+    new PollLoop(rateLimited, { intervalMs: DAY_MS, timers, log: () => {} }).start();
+    await timers.advance(0);
+
+    assert.deepEqual(timers.delays(), [2 * HOUR_MS]);
+  });
+
+  it("spreads the first run over the start window", async () => {
+    const timers = new FakeTimers();
+    const { task } = failingThenOk(0);
+    new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {}, startSpreadMs: 60_000, random: () => 0.5 }).start();
+
+    assert.deepEqual(timers.delays(), [30_000]);
+  });
+
+  it("does not reschedule when stopped while a run is in flight", async () => {
+    const timers = new FakeTimers();
+    let finish: () => void = () => {};
+    const slow = () => new Promise<void>((resolve) => { finish = resolve; });
+    const loop = new PollLoop(slow, { intervalMs: DAY_MS, timers, log: () => {} });
+    loop.start();
+    await timers.advance(0);
+
+    loop.stop();
+    finish();
+    await flush();
+    assert.deepEqual(timers.delays(), []);
+  });
+
+  it("never overlaps runs", async () => {
+    const timers = new FakeTimers();
+    let running = 0;
+    let maxRunning = 0;
+    const task = async () => {
+      running++;
+      maxRunning = Math.max(maxRunning, running);
+      await flush();
+      running--;
+    };
+    new PollLoop(task, { intervalMs: 10, timers, log: () => {} }).start();
+    await timers.advance(100);
+
+    assert.equal(maxRunning, 1);
+  });
 });
