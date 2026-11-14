@@ -1,5 +1,6 @@
 import Homey from "homey";
 import type PairSession from "homey/lib/PairSession";
+import { errorMessageKey } from "../../lib/error-messages";
 import { pairedVehicle, type PairedVehicle } from "../../lib/pairing";
 import { RdwClient } from "../../lib/rdw-client";
 import { isApkExpired, matchesUpcomingApk, RDW_YES, STORE, type SyncEvent } from "../../lib/vehicle-sync";
@@ -44,7 +45,7 @@ class VehicleDriver extends Homey.Driver {
 
       if (licensePlate === null) {
         await session.showView("add_device_by_license_plate");
-        await session.emit("error", "License plate not set");
+        await session.emit("error", this.homey.__("error.license_plate_missing"));
       }
 
       const plate = licensePlate as string;
@@ -60,7 +61,7 @@ class VehicleDriver extends Homey.Driver {
       } catch (error) {
         this.error("[pair] lookup failed", error);
         await session.prevView();
-        await session.emit("error", this.homey.__("messages.something_went_wrong", { error: String(error) }));
+        await session.emit("error", this.homey.__(errorMessageKey(error)));
       }
     });
 

@@ -9,15 +9,13 @@
     }
   },
   "error": {
-    "generic": "Er is een onverwachte fout opgetreden",
-    "unpaired": "Het apparaat is ontkoppeld en moet opnieuw worden gekoppeld",
-    "device_not_found": "Apparaat niet gevonden",
-    "something_went_wrong": "Er is iets misgegaan"
+    "generic": "Er is een onverwachte fout opgetreden. Probeer het later opnieuw.",
+    "license_plate_missing": "Vul eerst een kenteken in.",
+    "rdw_unavailable": "De RDW is niet bereikbaar. Probeer het later opnieuw."
   },
   "messages": {
     "expires_in_a_month": "De APK van __licensePlate__ verloopt over een maand",
     "has_expired": "De APK van __licensePlate__ is verlopen",
-    "license_plate_not_found": "Het kenteken \"__licensePlate__\" is niet gevonden",
-    "something_went_wrong": "Er ging iets mis \"__error__\""
+    "license_plate_not_found": "Het kenteken \"__licensePlate__\" is niet gevonden"
   }
 }
