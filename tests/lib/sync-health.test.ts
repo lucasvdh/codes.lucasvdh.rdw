@@ -36,4 +36,10 @@ describe("SyncHealth", () => {
     health.succeeded();
     assert.equal(health.failed(), undefined);
   });
+
+  it("does not warn about a short outage, however many retries it takes", () => {
+    const health = new SyncHealth();
+    const minute = 60_000;
+    for (const at of [0, 1, 3, 7, 15, 31, 63].map((m) => m * minute)) assert.equal(health.failed(at), undefined);
+  });
 });
