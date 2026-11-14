@@ -1,14 +1,13 @@
 import Homey from "homey";
 import { PollLoop } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
+import { SYNC_SCHEDULE } from "../../lib/sync-schedule";
 import { SyncHealth, type WarningChange } from "../../lib/sync-health";
 import { applySyncPlan } from "../../lib/apply-sync";
 import { planVehicleSync, STORE, type VehicleSnapshot } from "../../lib/vehicle-sync";
 import type { VehicleRecord } from "../../lib/vehicle";
 import type { VehicleDriver } from "./driver";
 
-const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
-const START_SPREAD_MS = 5 * 60 * 1000;
 const ADDED_IN_0_2_0 = ["open_recall_indicator"];
 
 class VehicleDevice extends Homey.Device {
@@ -19,8 +18,7 @@ class VehicleDevice extends Homey.Device {
   async onInit(): Promise<void> {
     await this.migrate();
     this.loop = new PollLoop(() => this.sync(), {
-      intervalMs: SYNC_INTERVAL_MS,
-      startSpreadMs: START_SPREAD_MS,
+      ...SYNC_SCHEDULE,
       timers: this.homey,
       log: (...args) => this.error(...args),
     });
