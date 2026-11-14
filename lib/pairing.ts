@@ -13,7 +13,7 @@ export interface PairedVehicle {
 
 export function pairedVehicle(vehicle: VehicleRecord, licensePlate: string): PairedVehicle {
   return {
-    name: `${vehicle.merk} ${vehicle.handelsbenaming}`,
+    name: [vehicle.merk, vehicle.handelsbenaming].filter((part) => part !== "").join(" ") || licensePlate,
     data: { id: vehicle.kenteken },
     settings: {},
     store: {
