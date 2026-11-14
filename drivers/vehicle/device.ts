@@ -1,4 +1,5 @@
 import Homey from "homey";
+import { RdwHttpError } from "../../lib/errors";
 import { PollLoop, type PollRun } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
 import { SYNC_SCHEDULE } from "../../lib/sync-schedule";
@@ -51,7 +52,8 @@ class VehicleDevice extends Homey.Device {
     try {
       vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
     } catch (err) {
-      if (run.isCurrent()) await this.applyWarning(this.health.failed(Date.now()));
+      const permanent = err instanceof RdwHttpError && !err.retryable;
+      if (run.isCurrent()) await this.applyWarning(permanent ? this.health.rejected() : this.health.failed(Date.now()));
       throw err;
     }
     if (!run.isCurrent()) return;

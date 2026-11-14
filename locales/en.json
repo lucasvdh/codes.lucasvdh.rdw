@@ -17,7 +17,8 @@
   "device": {
     "warning": {
       "vehicle_not_found": "The RDW no longer has data for this license plate. The vehicle may have been exported or scrapped.",
-      "rdw_unreachable": "The RDW could not be reached for a while. The values shown may be outdated."
+      "rdw_unreachable": "The RDW could not be reached for a while. The values shown may be outdated.",
+      "rdw_rejected": "The RDW refused the request for this vehicle. Please send a diagnostic report from the app settings."
     }
   },
   "messages": {
