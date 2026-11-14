@@ -31,6 +31,10 @@ export class SyncHealth {
     return this.change("device.warning.vehicle_not_found");
   }
 
+  rejected(): WarningChange {
+    return undefined;
+  }
+
   failed(now: number): WarningChange {
     if (this.failingSince === undefined || now < this.failingSince) this.failingSince = now;
     if (now - this.failingSince < SyncHealth.UNREACHABLE_AFTER_MS) return undefined;

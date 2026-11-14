@@ -57,4 +57,15 @@ describe("SyncHealth", () => {
     assert.equal(health.failed(0), undefined);
     assert.equal(health.outageStart, 0);
   });
+
+  it("says the RDW refused the request instead of calling it unreachable", () => {
+    assert.deepEqual(new SyncHealth().rejected(), { set: "device.warning.rdw_rejected" });
+  });
+
+  it("does not count a refused request as part of an outage", () => {
+    const health = new SyncHealth();
+    health.failed(0);
+    health.rejected();
+    assert.equal(health.outageStart, undefined);
+  });
 });
