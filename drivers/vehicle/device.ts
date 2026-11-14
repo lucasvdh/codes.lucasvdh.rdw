@@ -2,7 +2,8 @@ import Homey from "homey";
 import { PollLoop } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
 import { SyncHealth, type WarningChange } from "../../lib/sync-health";
-import { planVehicleSync, STORE, type CapabilityValues, type VehicleSnapshot } from "../../lib/vehicle-sync";
+import { applySyncPlan } from "../../lib/apply-sync";
+import { planVehicleSync, STORE, type VehicleSnapshot } from "../../lib/vehicle-sync";
 import type { VehicleRecord } from "../../lib/vehicle";
 import type { VehicleDriver } from "./driver";
 
@@ -62,17 +63,17 @@ class VehicleDevice extends Homey.Device {
     await this.applyWarning(this.health.succeeded());
 
     const plan = planVehicleSync(this.snapshot(), vehicle, new Date(), this.homey.clock.getTimezone());
-    await this.setCapabilities(plan.capabilities);
-
     const driver = this.driver as VehicleDriver;
-    for (const event of plan.events) {
-      await driver.fire(this, event).catch((err) => this.error(`[sync] ${event.type} failed`, err));
-    }
-
-    await this.setStoreValue(STORE.APK_EXPIRY_DATE, plan.snapshot.apkExpiryDate).catch(this.error);
-    await this.setStoreValue(STORE.OPEN_RECALL, plan.snapshot.openRecall).catch(this.error);
-    await this.setStoreValue(STORE.IS_INSURED, plan.snapshot.isInsured).catch(this.error);
-    await this.setStoreValue(STORE.LAST_DAILY_CHECK, plan.snapshot.lastDailyCheck).catch(this.error);
+    await applySyncPlan(plan, {
+      setCapability: (id, value) => this.setCapabilityValue(id, value).catch(this.error),
+      fire: (event) => driver.fire(this, event).catch((err) => this.error(`[sync] ${event.type} failed`, err)),
+      saveSnapshot: async (snapshot) => {
+        await this.setStoreValue(STORE.APK_EXPIRY_DATE, snapshot.apkExpiryDate).catch(this.error);
+        await this.setStoreValue(STORE.OPEN_RECALL, snapshot.openRecall).catch(this.error);
+        await this.setStoreValue(STORE.IS_INSURED, snapshot.isInsured).catch(this.error);
+        await this.setStoreValue(STORE.LAST_DAILY_CHECK, snapshot.lastDailyCheck).catch(this.error);
+      },
+    });
   }
 
   private async applyWarning(change: WarningChange): Promise<void> {
@@ -88,12 +89,6 @@ class VehicleDevice extends Homey.Device {
       isInsured: this.getStoreValue(STORE.IS_INSURED) as string | undefined,
       lastDailyCheck: this.getStoreValue(STORE.LAST_DAILY_CHECK) as string | undefined,
     };
-  }
-
-  private async setCapabilities(values: CapabilityValues): Promise<void> {
-    for (const [capability, value] of Object.entries(values)) {
-      await this.setCapabilityValue(capability, value).catch(this.error);
-    }
   }
 }
 
