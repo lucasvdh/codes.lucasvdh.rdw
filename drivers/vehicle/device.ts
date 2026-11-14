@@ -60,6 +60,7 @@ class VehicleDevice extends Homey.Device {
       return;
     }
     await this.applyWarning(this.health.succeeded());
+    if (!run.isCurrent()) return;
 
     const plan = planVehicleSync(this.snapshot(), vehicle, new Date(), this.homey.clock.getTimezone());
     const driver = this.driver as VehicleDriver;
@@ -72,7 +73,7 @@ class VehicleDevice extends Homey.Device {
         await this.setStoreValue(STORE.IS_INSURED, snapshot.isInsured).catch(this.error);
         await this.setStoreValue(STORE.LAST_DAILY_CHECK, snapshot.lastDailyCheck).catch(this.error);
       },
-    });
+    }, () => run.isCurrent());
   }
 
   private async applyWarning(change: WarningChange): Promise<void> {
