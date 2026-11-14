@@ -1,176 +1,126 @@
-import {Driver, FlowCardCondition, FlowCardTriggerDevice} from "homey";
-import {Device as DeviceType} from "./types";
-import VehicleDevice from "./device";
-import {RDWClient, Vehicle} from "../../rdw-client";
+import Homey from "homey";
+import type PairSession from "homey/lib/PairSession";
+import { pairedVehicle, type PairedVehicle } from "../../lib/pairing";
+import { RdwClient } from "../../lib/rdw-client";
+import { isApkExpired, matchesUpcomingApk, RDW_YES, STORE, type SyncEvent } from "../../lib/vehicle-sync";
 
-class VehicleDriver extends Driver {
-  // Triggers
-  private apkExpiredTrigger?: FlowCardTriggerDevice;
-  private upcomingAPKExpiryDateTrigger?: FlowCardTriggerDevice;
-  private apkExpiryDateChangedTrigger?: FlowCardTriggerDevice;
-  private openRecallTrigger?: FlowCardTriggerDevice;
-  private insuranceHasExpiredTrigger?: FlowCardTriggerDevice;
-  // Conditions
-  private isAPKExpiredCondition?: FlowCardCondition;
-  private hasOpenRecallCondition?: FlowCardCondition;
-  private isInsuredCondition?: FlowCardCondition;
+interface DeviceArgs {
+  device: Homey.Device;
+}
+
+interface UpcomingApkArgs extends DeviceArgs {
+  days_until_apk: number;
+}
+
+interface UpcomingApkState {
+  days_until_apk: number;
+}
+
+type TriggerId = Exclude<SyncEvent["type"], "notification">;
+
+const TRIGGER_IDS: TriggerId[] = [
+  "apk_expired",
+  "upcoming_apk_expiry_date",
+  "apk_expiry_date_changed",
+  "open_recall",
+  "insurance_has_expired",
+];
+
+class VehicleDriver extends Homey.Driver {
+  private triggers = new Map<TriggerId, Homey.FlowCardTriggerDevice>();
 
   async onInit(): Promise<void> {
-    this.log("Driver has been initialised");
-
-    await this.registerFlowCards()
-    this.log('Flow cards have been initialized')
+    this.registerFlowCards();
+    this.log("[driver] initialised");
   }
 
-  async onPair(session: any): Promise<void> {
+  async onPair(session: PairSession): Promise<void> {
+    const client = new RdwClient();
     let licensePlate: string | null = null;
-    let pairingDevice: DeviceType | null = null
-    const pairingClient: RDWClient = new RDWClient()
+    let pairingDevice: PairedVehicle | null = null;
 
-    session.setHandler('showView', async (view: string) => {
-      this.log('Show view', view)
+    session.setHandler("showView", async (view: string) => {
+      if (view !== "verify") return;
 
-      if (view === "verify") {
-        if (licensePlate === null) {
-          await session.showView('add_device_by_license_plate');
-          session.emit('error', 'License plate not set')
+      if (licensePlate === null) {
+        await session.showView("add_device_by_license_plate");
+        await session.emit("error", "License plate not set");
+      }
+
+      const plate = licensePlate as string;
+      try {
+        const vehicle = await client.fetchVehicle(plate);
+        if (vehicle === undefined) {
+          await session.prevView();
+          await session.emit("error", this.homey.__("messages.license_plate_not_found", { licensePlate: plate }));
+          return;
         }
-
-        pairingClient
-            .fetchVehicleData(licensePlate as string)
-            .then(async (vehicle: Vehicle | undefined) => {
-              if (vehicle === undefined) {
-                await session.prevView();
-                session.emit('error', this.homey.__('messages.license_plate_not_found', {licensePlate}))
-              } else {
-                pairingDevice = {
-                  name: vehicle.merk + ' ' + vehicle.handelsbenaming,
-                  data: {
-                    id: vehicle.kenteken
-                  },
-                  settings: {},
-                  store: {
-                    license_plate: licensePlate as string,
-                    apk_expiry_date: vehicle.vervaldatum_apk
-                  }
-                } as DeviceType;
-
-                session.showView('add_my_device');
-              }
-            })
-            .catch(async (error) => {
-              session.prevView();
-
-              session.emit('error', this.homey.__('messages.something_went_wrong', {error}))
-            });
+        pairingDevice = pairedVehicle(vehicle, plate);
+        await session.showView("add_my_device");
+      } catch (error) {
+        this.error("[pair] lookup failed", error);
+        await session.prevView();
+        await session.emit("error", this.homey.__("messages.something_went_wrong", { error: String(error) }));
       }
     });
 
-    session.setHandler('getDevice', async (): Promise<DeviceType> => {
-      this.log('Get device', pairingDevice);
-      if (pairingDevice === null) {
-        throw new Error('Pairing device not set');
-      }
+    session.setHandler("getDevice", async (): Promise<PairedVehicle> => {
+      if (pairingDevice === null) throw new Error("Pairing device not set");
+      return pairingDevice;
+    });
 
-      return pairingDevice
-    })
+    session.setHandler("getLicensePlate", async (): Promise<string | null> => licensePlate);
 
-    session.setHandler('getLicensePlate', async (): Promise<string | null> => {
-      return licensePlate
-    })
-
-    session.setHandler('setLicensePlate', async (value: string): Promise<void> => {
+    session.setHandler("setLicensePlate", async (value: string): Promise<void> => {
       licensePlate = value;
-    })
-  }
-
-  private async registerFlowCards() {
-    this.apkExpiredTrigger = this.homey.flow.getDeviceTriggerCard('apk_expired')
-    this.apkExpiryDateChangedTrigger = this.homey.flow.getDeviceTriggerCard('apk_expiry_date_changed')
-    this.upcomingAPKExpiryDateTrigger = this.homey.flow.getDeviceTriggerCard('upcoming_apk_expiry_date')
-    this.openRecallTrigger = this.homey.flow.getDeviceTriggerCard('open_recall')
-    this.insuranceHasExpiredTrigger = this.homey.flow.getDeviceTriggerCard('insurance_has_expired')
-
-    this.upcomingAPKExpiryDateTrigger.registerRunListener(async (args, state) => {
-      return args.days_until_apk >= state.days_until_apk;
-    });
-
-    this.isAPKExpiredCondition = this.homey.flow.getConditionCard('is_apk_expired');
-    this.isAPKExpiredCondition.registerRunListener(async (args: { device: VehicleDevice }, state) => {
-      const daysUntilAPK = this.calculateDaysUntilFutureDate(args.device.getStoreValue('apk_expiry_date'));
-
-      return daysUntilAPK <= 0;
-    });
-
-    this.hasOpenRecallCondition = this.homey.flow.getConditionCard('has_open_recall');
-    this.hasOpenRecallCondition.registerRunListener(async (args: { device: VehicleDevice }, state) => {
-      return args.device.getCapabilityValue('open_recall_indicator') === 'Ja';
-    });
-
-    this.isInsuredCondition = this.homey.flow.getConditionCard('is_insured');
-    this.isInsuredCondition.registerRunListener(async (args: { device: VehicleDevice }, state) => {
-      return args.device.getCapabilityValue('is_insured') === 'Ja';
     });
   }
 
-  public triggerAPKExpiryDateChangedTrigger(device: VehicleDevice, args: { date: string }) {
-    this.apkExpiryDateChangedTrigger?.trigger(device, {
-      new_date: args.date,
-    }).catch(this.error);
-  }
-
-  public triggerOpenRecallTrigger(device: VehicleDevice) {
-    this.openRecallTrigger?.trigger(device).catch(this.error);
-  }
-
-  public triggerInsuranceHasExpiredTrigger(device: VehicleDevice) {
-    this.insuranceHasExpiredTrigger?.trigger(device).catch(this.error);
-  }
-
-  public triggerAPKExpiryTriggers(device: VehicleDevice, args: { date: string }) {
-    const daysUntilAPK = this.calculateDaysUntilFutureDate(args.date);
-    const licensePlate = device.getStoreValue('license_plate');
-
-    if (daysUntilAPK === 0) {
-      this.homey.notifications.createNotification({
-        excerpt: this.homey.__('messages.has_expired', {licensePlate})
-      }).catch(error => {
-        this.error('Error sending expiration notification: ' + error.message)
-      });
+  /** Fires a device trigger. Notifications are app-wide and go through the notification manager. */
+  async fire(device: Homey.Device, event: SyncEvent): Promise<void> {
+    switch (event.type) {
+      case "notification": {
+        const licensePlate = device.getStoreValue(STORE.LICENSE_PLATE) as string;
+        await this.homey.notifications.createNotification({ excerpt: this.homey.__(event.key, { licensePlate }) });
+        return;
+      }
+      case "upcoming_apk_expiry_date":
+        await this.trigger(event.type).trigger(device, {}, { days_until_apk: event.daysUntilApk });
+        return;
+      case "apk_expiry_date_changed":
+        await this.trigger(event.type).trigger(device, { new_date: event.newDate });
+        return;
+      default:
+        await this.trigger(event.type).trigger(device);
     }
-
-    if (daysUntilAPK === 30) {
-      this.homey.notifications.createNotification({
-        excerpt: this.homey.__('messages.expires_in_a_month', {licensePlate})
-      }).catch(error => {
-        this.error('Error sending expiration notification: ' + error.message)
-      });
-    }
-
-    if (daysUntilAPK <= 0) {
-      this.apkExpiredTrigger?.trigger(device).catch(this.error);
-    }
-
-    this.upcomingAPKExpiryDateTrigger?.trigger(device, undefined, {
-      days_until_apk: daysUntilAPK,
-    }).catch(this.error);
   }
 
-  private calculateDaysUntilFutureDate(dateString: string) {
-    const now = new Date();
-    const futureYear = parseInt(dateString.slice(0, 4));
-    const futureMonth = parseInt(dateString.slice(4, 6)) - 1; // Months are 0-based in JavaScript
-    const futureDay = parseInt(dateString.slice(6, 8));
+  private trigger(id: TriggerId): Homey.FlowCardTriggerDevice {
+    const card = this.triggers.get(id);
+    if (!card) throw new Error(`Trigger card ${id} is not registered`);
+    return card;
+  }
 
-    const futureDate = new Date(futureYear, futureMonth, futureDay);
+  private registerFlowCards(): void {
+    for (const id of TRIGGER_IDS) this.triggers.set(id, this.homey.flow.getDeviceTriggerCard(id));
 
-    // Calculate the difference in milliseconds
-    const timeDifference = futureDate.getTime() - now.getTime();
+    this.trigger("upcoming_apk_expiry_date").registerRunListener(
+      async (args: UpcomingApkArgs, state: UpcomingApkState) => matchesUpcomingApk(args.days_until_apk, state.days_until_apk),
+    );
 
-    return Math.floor(timeDifference / (1000 * 3600 * 24));
+    this.homey.flow.getConditionCard("is_apk_expired").registerRunListener(
+      async ({ device }: DeviceArgs) => isApkExpired(device.getStoreValue(STORE.APK_EXPIRY_DATE) as string, new Date()),
+    );
+
+    this.homey.flow.getConditionCard("has_open_recall").registerRunListener(
+      async ({ device }: DeviceArgs) => device.getCapabilityValue("open_recall_indicator") === RDW_YES,
+    );
+
+    this.homey.flow.getConditionCard("is_insured").registerRunListener(
+      async ({ device }: DeviceArgs) => device.getCapabilityValue("is_insured") === RDW_YES,
+    );
   }
 }
 
 module.exports = VehicleDriver;
-
-export default VehicleDriver;
+export type { VehicleDriver };
