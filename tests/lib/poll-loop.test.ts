@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { PollLoop } from "../../lib/poll-loop";
+import { PollLoop, type PollRun } from "../../lib/poll-loop";
 import { FakeTimers, flush } from "../helpers/fake-timers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -109,6 +109,24 @@ describe("PollLoop", () => {
     finish();
     await flush();
     assert.deepEqual(timers.delays(), []);
+  });
+
+  it("tells a running task once the loop has stopped", async () => {
+    const timers = new FakeTimers();
+    let finish: () => void = () => {};
+    let currentAfterStop: boolean | undefined;
+    const slow = async (run: PollRun) => {
+      await new Promise<void>((resolve) => { finish = resolve; });
+      currentAfterStop = run.isCurrent();
+    };
+    const loop = new PollLoop(slow, { intervalMs: DAY_MS, timers, log: () => {} });
+    loop.start();
+    await timers.advance(0);
+
+    loop.stop();
+    finish();
+    await flush();
+    assert.equal(currentAfterStop, false);
   });
 
   it("never overlaps runs", async () => {
