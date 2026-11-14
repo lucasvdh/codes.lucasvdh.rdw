@@ -49,7 +49,7 @@ class VehicleDevice extends Homey.Device {
     const vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
     if (vehicle === undefined) throw new Error("Vehicle not found");
 
-    const plan = planVehicleSync(this.snapshot(), vehicle, new Date());
+    const plan = planVehicleSync(this.snapshot(), vehicle, new Date(), this.homey.clock.getTimezone());
     await this.setCapabilities(plan.capabilities);
 
     const driver = this.driver as VehicleDriver;
