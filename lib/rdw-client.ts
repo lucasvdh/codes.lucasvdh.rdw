@@ -1,21 +1,25 @@
 import http from "http";
 import https from "https";
-import { RdwHttpError, RdwResponseError } from "./errors";
+import { RdwHttpError, RdwResponseError, RdwTimeoutError } from "./errors";
 import { parseVehicleResponse, type VehicleRecord } from "./vehicle";
 
 export const RDW_BASE_URL = "https://opendata.rdw.nl";
 const VEHICLES_PATH = "/api/id/m9d7-ebf2.json";
+const DEFAULT_TIMEOUT_MS = 15_000;
 
 export interface RdwClientOptions {
   baseUrl?: string;
+  /** Deadline for the whole request, from connecting to the last byte. */
   timeoutMs?: number;
 }
 
 export class RdwClient {
   private readonly baseUrl: string;
+  private readonly timeoutMs: number;
 
   constructor(options: RdwClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? RDW_BASE_URL;
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 
   async fetchVehicle(licensePlate: string): Promise<VehicleRecord | undefined> {
@@ -30,8 +34,9 @@ export class RdwClient {
       const req = transport.get(url, { headers: { accept: "application/json" } }, (res) => {
         const chunks: Buffer[] = [];
         res.on("data", (chunk: Buffer) => chunks.push(chunk));
-        res.on("error", reject);
+        res.on("error", fail);
         res.on("end", () => {
+          clearTimeout(deadline);
           const status = res.statusCode ?? 0;
           if (status < 200 || status >= 300) {
             reject(new RdwHttpError(status));
@@ -44,7 +49,12 @@ export class RdwClient {
           }
         });
       });
-      req.on("error", reject);
+      const deadline = setTimeout(() => req.destroy(new RdwTimeoutError(this.timeoutMs)), this.timeoutMs);
+      function fail(err: Error): void {
+        clearTimeout(deadline);
+        reject(err);
+      }
+      req.on("error", fail);
     });
   }
 }
