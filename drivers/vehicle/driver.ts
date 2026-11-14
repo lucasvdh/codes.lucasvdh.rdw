@@ -1,6 +1,7 @@
 import Homey from "homey";
 import type PairSession from "homey/lib/PairSession";
 import { errorMessageKey } from "../../lib/error-messages";
+import { normalizeLicensePlate } from "../../lib/license-plate";
 import { pairedVehicle, type PairedVehicle } from "../../lib/pairing";
 import { RdwClient } from "../../lib/rdw-client";
 import { isApkExpired, matchesUpcomingApk, RDW_YES, STORE, type SyncEvent } from "../../lib/vehicle-sync";
@@ -37,18 +38,19 @@ class VehicleDriver extends Homey.Driver {
 
   async onPair(session: PairSession): Promise<void> {
     const client = new RdwClient();
-    let licensePlate: string | null = null;
+    let licensePlate: string | undefined;
     let pairingDevice: PairedVehicle | null = null;
 
     session.setHandler("showView", async (view: string) => {
       if (view !== "verify") return;
 
-      if (licensePlate === null) {
-        await session.showView("add_device_by_license_plate");
+      if (licensePlate === undefined) {
+        await session.showView("add_by_license_plate");
         await session.emit("error", this.homey.__("error.license_plate_missing"));
+        return;
       }
 
-      const plate = licensePlate as string;
+      const plate = licensePlate;
       try {
         const vehicle = await client.fetchVehicle(plate);
         if (vehicle === undefined) {
@@ -66,14 +68,14 @@ class VehicleDriver extends Homey.Driver {
     });
 
     session.setHandler("getDevice", async (): Promise<PairedVehicle> => {
-      if (pairingDevice === null) throw new Error("Pairing device not set");
+      if (pairingDevice === null) throw new Error(this.homey.__("error.generic"));
       return pairingDevice;
     });
 
-    session.setHandler("getLicensePlate", async (): Promise<string | null> => licensePlate);
+    session.setHandler("getLicensePlate", async (): Promise<string> => licensePlate ?? "");
 
-    session.setHandler("setLicensePlate", async (value: string): Promise<void> => {
-      licensePlate = value;
+    session.setHandler("setLicensePlate", async (value: unknown): Promise<void> => {
+      licensePlate = normalizeLicensePlate(value);
     });
   }
 
