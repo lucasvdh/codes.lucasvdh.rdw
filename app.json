@@ -72,6 +72,10 @@
           "en": "The APK is expired",
           "nl": "De APK is verlopen"
         },
+        "hint": {
+          "en": "Checked once a day. Fires every day while the APK is expired.",
+          "nl": "Wordt één keer per dag gecontroleerd. Gaat elke dag af zolang de APK verlopen is."
+        },
         "args": [
           {
             "name": "device",
@@ -143,6 +147,10 @@
           "en": "The APK expires in [[days_until_apk]] days",
           "nl": "De APK verloopt over [[days_until_apk]] dagen"
         },
+        "hint": {
+          "en": "Checked once a day. Fires every day from the chosen number of days before the APK expiry date.",
+          "nl": "Wordt één keer per dag gecontroleerd. Gaat elke dag af vanaf het gekozen aantal dagen voor de APK-vervaldatum."
+        },
         "args": [
           {
             "name": "device",
@@ -166,6 +174,7 @@
     ],
     "conditions": [
       {
+        "id": "has_open_recall",
         "title": {
           "nl": "Er !{{is|is geen}} openstaande terugroepactie",
           "en": "!{{Has|Doesn't have}} an open recall action"
@@ -176,10 +185,10 @@
             "type": "device",
             "filter": "driver_id=vehicle"
           }
-        ],
-        "id": "has_open_recall"
+        ]
       },
       {
+        "id": "is_apk_expired",
         "title": {
           "nl": "De APK !{{is|is nog niet}} verlopen",
           "en": "The APK !{{is|has not yet}} expired"
@@ -190,10 +199,10 @@
             "type": "device",
             "filter": "driver_id=vehicle"
           }
-        ],
-        "id": "is_apk_expired"
+        ]
       },
       {
+        "id": "is_insured",
         "title": {
           "nl": "!{{Is|Is niet}} verzekerd",
           "en": "!{{Is|Is not}} insured"
@@ -204,8 +213,7 @@
             "type": "device",
             "filter": "driver_id=vehicle"
           }
-        ],
-        "id": "is_insured"
+        ]
       }
     ]
   },
