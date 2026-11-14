@@ -25,4 +25,14 @@ describe("SYNC_SCHEDULE", () => {
     for (let day = firstDay; day <= lastDay; day++) if (!daysWithSync.has(day)) missed.push(day);
     assert.deepEqual(missed, []);
   });
+
+  it("asks the RDW about once a day per vehicle", async () => {
+    const timers = new FakeTimers();
+    let syncs = 0;
+    const sync = async () => { syncs++; };
+    new PollLoop(sync, { ...SYNC_SCHEDULE, startSpreadMs: 0, timers, log: () => {}, random: () => 0 }).start();
+    await timers.advance(30 * DAY_MS);
+
+    assert.ok(syncs <= 33, `${syncs} syncs in 30 days`);
+  });
 });
