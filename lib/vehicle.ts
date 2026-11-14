@@ -1,3 +1,5 @@
+import { RdwResponseError } from "./errors";
+
 /** The fields of an RDW "Gekentekende voertuigen" (m9d7-ebf2) record that the app uses. */
 export interface VehicleRecord {
   kenteken: string;
@@ -20,7 +22,7 @@ function text(record: Record<string, unknown>, field: string): string {
 
 /** Picks the first vehicle from an RDW response body, or undefined when there is none. */
 export function parseVehicleResponse(body: unknown): VehicleRecord | undefined {
-  if (!Array.isArray(body)) return undefined;
+  if (!Array.isArray(body)) throw new RdwResponseError("RDW response is not a list of vehicles");
   const first: unknown = body[0];
   if (!isRecord(first) || typeof first.kenteken !== "string") return undefined;
 

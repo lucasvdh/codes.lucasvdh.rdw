@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { RdwResponseError } from "../../lib/errors";
 import { parseVehicleResponse } from "../../lib/vehicle";
 import { vehicleResponse } from "../helpers/fixtures";
 
@@ -20,8 +21,8 @@ describe("parseVehicleResponse", () => {
     assert.equal(parseVehicleResponse([]), undefined);
   });
 
-  it("returns undefined for a Socrata error object", () => {
-    assert.equal(parseVehicleResponse({ error: true, message: "query failed" }), undefined);
+  it("throws for anything that is not a list, such as a Socrata error object", () => {
+    assert.throws(() => parseVehicleResponse({ error: true, message: "query failed" }), RdwResponseError);
   });
 
   it("returns undefined when the record has no plate", () => {
