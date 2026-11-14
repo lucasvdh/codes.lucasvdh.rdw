@@ -40,4 +40,9 @@ describe("RdwClient.fetchVehicle", () => {
     server = await fakeServer(() => "hang");
     await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
   });
+
+  it("gives up on a response that stops halfway", async () => {
+    server = await fakeServer(() => "stall");
+    await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
+  });
 });

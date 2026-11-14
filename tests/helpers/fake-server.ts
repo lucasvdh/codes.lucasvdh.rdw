@@ -7,7 +7,7 @@ export interface FakeResponse {
   headers?: Record<string, string>;
 }
 
-export type Handler = (req: http.IncomingMessage) => FakeResponse | "hang";
+export type Handler = (req: http.IncomingMessage) => FakeResponse | "hang" | "stall";
 
 export interface FakeServer {
   url: string;
@@ -15,13 +15,18 @@ export interface FakeServer {
   close(): Promise<void>;
 }
 
-/** A local HTTP server on a free port. "hang" never answers, to test timeouts. */
+/** A local HTTP server on a free port. "hang" never answers; "stall" stops halfway through the body. */
 export async function fakeServer(handler: Handler): Promise<FakeServer> {
   const requests: string[] = [];
   const server = http.createServer((req, res) => {
     requests.push(req.url ?? "");
     const result = handler(req);
     if (result === "hang") return;
+    if (result === "stall") {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.write("[{");
+      return;
+    }
     res.writeHead(result.status, { "content-type": "application/json", ...result.headers });
     res.end(result.body ?? "");
   });
