@@ -67,6 +67,17 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [2 * HOUR_MS]);
   });
 
+  it("never waits longer than the interval, whatever Retry-After says", async () => {
+    const timers = new FakeTimers();
+    const rateLimited = async () => {
+      throw Object.assign(new Error("503"), { retryAfterMs: 365 * DAY_MS });
+    };
+    new PollLoop(rateLimited, { intervalMs: DAY_MS, timers, log: () => {} }).start();
+    await timers.advance(0);
+
+    assert.deepEqual(timers.delays(), [DAY_MS]);
+  });
+
   it("spreads the first run over the start window", async () => {
     const timers = new FakeTimers();
     const { task } = failingThenOk(0);

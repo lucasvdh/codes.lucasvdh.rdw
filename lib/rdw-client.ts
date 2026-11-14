@@ -1,11 +1,20 @@
 import http from "http";
 import https from "https";
-import { RdwHttpError, RdwResponseError, RdwTimeoutError } from "./errors";
+import { RdwHttpError, RdwRateLimitError, RdwResponseError, RdwTimeoutError } from "./errors";
 import { parseVehicleResponse, type VehicleRecord } from "./vehicle";
 
 export const RDW_BASE_URL = "https://opendata.rdw.nl";
 const VEHICLES_PATH = "/api/id/m9d7-ebf2.json";
 const DEFAULT_TIMEOUT_MS = 15_000;
+const THROTTLED_STATUSES = [429, 503];
+
+/** Retry-After is either delay-seconds or an HTTP date. */
+export function parseRetryAfter(header: string | undefined, now: number): number | undefined {
+  if (!header) return undefined;
+  if (/^\d+$/.test(header.trim())) return Number(header.trim()) * 1000;
+  const at = Date.parse(header);
+  return Number.isNaN(at) ? undefined : Math.max(0, at - now);
+}
 
 export interface RdwClientOptions {
   baseUrl?: string;
@@ -17,10 +26,12 @@ export interface RdwClientOptions {
 export class RdwClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly now: () => number;
 
   constructor(options: RdwClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? RDW_BASE_URL;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.now = options.now ?? Date.now;
   }
 
   async fetchVehicle(licensePlate: string): Promise<VehicleRecord | undefined> {
@@ -39,6 +50,10 @@ export class RdwClient {
         res.on("end", () => {
           clearTimeout(deadline);
           const status = res.statusCode ?? 0;
+          if (THROTTLED_STATUSES.includes(status)) {
+            reject(new RdwRateLimitError(status, parseRetryAfter(res.headers["retry-after"], this.now())));
+            return;
+          }
           if (status < 200 || status >= 300) {
             reject(new RdwHttpError(status));
             return;

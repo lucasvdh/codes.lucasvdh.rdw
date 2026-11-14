@@ -74,7 +74,7 @@ export class PollLoop {
       delayMs = this.withJitter(this.options.intervalMs);
     } catch (err) {
       this.failures++;
-      delayMs = Math.max(this.backoffMs(), retryAfterOf(err));
+      delayMs = Math.max(this.backoffMs(), Math.min(retryAfterOf(err), this.options.intervalMs));
       this.options.log(`[poll] run failed (${this.failures}x), retrying in ${Math.round(delayMs / 1000)} s`, err);
     }
     if (this.isCurrent(generation)) this.schedule(delayMs);
