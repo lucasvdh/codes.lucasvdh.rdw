@@ -31,6 +31,11 @@ describe("RdwClient.fetchVehicle", () => {
       err instanceof RdwHttpError && err.statusCode === 400);
   });
 
+  it("throws RdwResponseError for a JSON answer that is not a list of vehicles", async () => {
+    server = await fakeServer(() => json({ error: true, message: "Service temporarily unavailable" }));
+    await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), RdwResponseError);
+  });
+
   it("throws RdwResponseError when the body is not JSON", async () => {
     server = await fakeServer(() => ({ status: 200, body: "<html>maintenance</html>" }));
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), RdwResponseError);
