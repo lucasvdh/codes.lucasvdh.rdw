@@ -24,7 +24,7 @@ This Homey app allows seamless integration with the Netherlands Vehicle Authorit
 
 ## Contributions
 
-We welcome contributions from the community! If you'd like to improve the app, please fork this repository and create a pull request.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build, test and open a pull request.
 
 ## Issues
 

@@ -3,6 +3,12 @@
   "compilerOptions": {
     "outDir": ".homeybuild/",
     "sourceMap": true,
-    "module": "commonjs"
-  }
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", ".homeybuild", ".test-build", "tests", "scripts"]
 }
