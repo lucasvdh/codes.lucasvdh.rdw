@@ -1,7 +1,7 @@
 import Homey from "homey";
 import type PairSession from "homey/lib/PairSession";
 import { errorMessageKey } from "../../lib/error-messages";
-import { normalizeLicensePlate } from "../../lib/license-plate";
+import { checkLicensePlate, type PlateCheck } from "../../lib/license-plate";
 import { pairedVehicle, type PairedVehicle } from "../../lib/pairing";
 import { RdwClient } from "../../lib/rdw-client";
 import { isApkExpired, matchesUpcomingApk, RDW_YES, STORE, type SyncEvent } from "../../lib/vehicle-sync";
@@ -38,19 +38,20 @@ class VehicleDriver extends Homey.Driver {
 
   async onPair(session: PairSession): Promise<void> {
     const client = new RdwClient();
-    let licensePlate: string | undefined;
+    let enteredPlate = "";
+    let licensePlate: PlateCheck = checkLicensePlate(enteredPlate);
     let pairingDevice: PairedVehicle | null = null;
 
     session.setHandler("showView", async (view: string) => {
       if (view !== "verify") return;
 
-      if (licensePlate === undefined) {
+      if ("error" in licensePlate) {
         await session.showView("add_by_license_plate");
-        await session.emit("error", this.homey.__("error.license_plate_missing"));
+        await session.emit("error", this.homey.__(licensePlate.error));
         return;
       }
 
-      const plate = licensePlate;
+      const { plate } = licensePlate;
       try {
         const vehicle = await client.fetchVehicle(plate);
         if (vehicle === undefined) {
@@ -72,10 +73,11 @@ class VehicleDriver extends Homey.Driver {
       return pairingDevice;
     });
 
-    session.setHandler("getLicensePlate", async (): Promise<string> => licensePlate ?? "");
+    session.setHandler("getLicensePlate", async (): Promise<string> => enteredPlate);
 
     session.setHandler("setLicensePlate", async (value: unknown): Promise<void> => {
-      licensePlate = normalizeLicensePlate(value);
+      enteredPlate = typeof value === "string" ? value : "";
+      licensePlate = checkLicensePlate(enteredPlate);
     });
   }
 

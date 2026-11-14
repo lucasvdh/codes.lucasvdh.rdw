@@ -11,6 +11,7 @@
   "error": {
     "generic": "An unexpected error occurred. Please try again later.",
     "license_plate_missing": "Enter a license plate first.",
+    "license_plate_invalid": "This is not a valid Dutch license plate.",
     "rdw_unavailable": "The RDW could not be reached. Please try again later."
   },
   "device": {
