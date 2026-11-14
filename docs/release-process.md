@@ -67,7 +67,7 @@ On a branch `chore/release-x.y.z`:
 5. Run `npm run homey-review -- --type update` and handle the findings.
 6. Commit `chore: release vX.Y.Z` (only version files and changelog), open a PR, merge.
 7. Tag the merge commit with `git tag -m "vX.Y.Z" vX.Y.Z <sha>` (annotated, so signing works), push the tag, and create the GitHub release: What's new, Fixes, Requirements (minimum Homey version when it changed), Under the hood, and the list of commits since the previous tag.
-8. Publish from the maintainer's machine: `npm run homey-manifest && npx homey app publish`, logged in with `homey login`. This uploads a Draft. (This app has no publish workflow, see §5.)
+8. Publish from the maintainer's machine with `npm run homey-publish`, logged in with `homey login`. This uploads a Draft. (This app has no publish workflow, see §5.)
 9. In Developer Tools (or through the Developer MCP when the maintainer asks): release to Test, or submit for certification. Anything that could only be tested against fakes (discovery, pairing views, real devices) is checked on Test with a real Homey before Live.
 10. Draft the forum post for the release (`docs/community-and-support.md`). The maintainer posts it or approves it.
 
@@ -77,7 +77,7 @@ Agents do steps 1–7 when asked to prepare a release. Steps 8–10 change publi
 
 This app publishes from the maintainer's machine, not with the template's publish workflow: there is no `HOMEY_PAT` secret in GitHub and no `.github/workflows/publish.yml`.
 
-Publish with `npm run homey-manifest && npx homey app publish` (logged in with `homey login`), from the tagged release commit. Release to Test or Live in Developer Tools or through the Homey Developer MCP. An agent does this only when the maintainer asks for that specific step.
+Publish with `npm run homey-publish` (logged in with `homey login`). The script takes over the guards the workflow had: it refuses a working tree with changes or untracked files and a commit without the `vX.Y.Z` tag of the manifest version, and runs `homey app validate --level verified` before `homey app publish`. Answer "No" when the CLI offers to change the version: the version bump is the reviewed release PR. Release to Test or Live in Developer Tools or through the Homey Developer MCP. An agent does this only when the maintainer asks for that specific step.
 
 ## 6. After the release
 

@@ -17,7 +17,8 @@
     "homey-build": "npm run homey-manifest && homey app build",
     "homey-validate": "npm run homey-manifest && homey app validate --level verified",
     "homey-review": "npm run homey-manifest && homey app review",
-    "homey-run": "npm run homey-manifest && homey app run"
+    "homey-run": "npm run homey-manifest && homey app run",
+    "homey-publish": "node scripts/publish.mjs"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.7",

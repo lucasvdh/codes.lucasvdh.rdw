@@ -114,6 +114,7 @@ npm run check-locales  # every locale has the same keys as en.json
 npm run homey-validate # homey app validate --level verified (strictest level; needs Docker)
 npm run homey-review   # AI review against the App Store guidelines (needs an API key)
 npm run homey-run      # run on a Homey (needs a Homey and `homey login`)
+npm run homey-publish  # maintainer only: Draft upload from a clean, tagged release commit
 ```
 
 Before you say a change is done: `typecheck`, `lint`, `test` and `check-locales` pass. If you touched anything under `.homeycompose/`, `drivers/*/*.compose.json`, `locales/`, `assets/` or `README*.txt`, also run `homey-validate`.
