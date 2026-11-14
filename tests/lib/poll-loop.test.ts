@@ -89,6 +89,20 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [DAY_MS]);
   });
 
+  it("starts the backoff from the beginning after permanent failures", async () => {
+    const timers = new FakeTimers();
+    const errors = [{ retryable: false }, { retryable: false }, {}];
+    const task = async () => {
+      throw Object.assign(new Error("failed"), errors.shift() ?? {});
+    };
+    new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {}, retryBaseMs: 1000, random: () => 1 }).start();
+    await timers.advance(0);
+    await timers.advance(DAY_MS);
+    await timers.advance(DAY_MS);
+
+    assert.deepEqual(timers.delays(), [1000]);
+  });
+
   it("spreads the first run over the start window", async () => {
     const timers = new FakeTimers();
     const { task } = failingThenOk(0);
