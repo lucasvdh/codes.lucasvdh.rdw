@@ -11,6 +11,7 @@
   "error": {
     "generic": "Er is een onverwachte fout opgetreden. Probeer het later opnieuw.",
     "license_plate_missing": "Vul eerst een kenteken in.",
+    "license_plate_invalid": "Dit is geen geldig Nederlands kenteken.",
     "rdw_unavailable": "De RDW is niet bereikbaar. Probeer het later opnieuw."
   },
   "device": {
