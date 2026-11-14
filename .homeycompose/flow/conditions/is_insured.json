@@ -1,4 +1,5 @@
 {
+  "id": "is_insured",
   "title": {
     "nl": "!{{Is|Is niet}} verzekerd",
     "en": "!{{Is|Is not}} insured"

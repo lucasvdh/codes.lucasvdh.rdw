@@ -4,6 +4,10 @@
     "en": "The APK is expired",
     "nl": "De APK is verlopen"
   },
+  "hint": {
+    "en": "Checked once a day. Fires every day while the APK is expired.",
+    "nl": "Wordt één keer per dag gecontroleerd. Gaat elke dag af zolang de APK verlopen is."
+  },
   "args": [
     {
       "name": "device",

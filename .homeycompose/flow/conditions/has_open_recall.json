@@ -1,4 +1,5 @@
 {
+  "id": "has_open_recall",
   "title": {
     "nl": "Er !{{is|is geen}} openstaande terugroepactie",
     "en": "!{{Has|Doesn't have}} an open recall action"

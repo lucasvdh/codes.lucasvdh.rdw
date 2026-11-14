@@ -8,6 +8,10 @@
     "en": "The APK expires in [[days_until_apk]] days",
     "nl": "De APK verloopt over [[days_until_apk]] dagen"
   },
+  "hint": {
+    "en": "Checked once a day. Fires every day from the chosen number of days before the APK expiry date.",
+    "nl": "Wordt één keer per dag gecontroleerd. Gaat elke dag af vanaf het gekozen aantal dagen voor de APK-vervaldatum."
+  },
   "args": [
     {
       "name": "device",
