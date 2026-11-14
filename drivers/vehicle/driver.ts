@@ -112,7 +112,7 @@ class VehicleDriver extends Homey.Driver {
     );
 
     this.homey.flow.getConditionCard("is_apk_expired").registerRunListener(
-      async ({ device }: DeviceArgs) => isApkExpired(device.getStoreValue(STORE.APK_EXPIRY_DATE) as string, new Date()),
+      async ({ device }: DeviceArgs) => isApkExpired(device.getStoreValue(STORE.APK_EXPIRY_DATE) as string, new Date(), this.homey.clock.getTimezone()),
     );
 
     this.homey.flow.getConditionCard("has_open_recall").registerRunListener(

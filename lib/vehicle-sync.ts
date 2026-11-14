@@ -16,6 +16,8 @@ export interface VehicleSnapshot {
   apkExpiryDate?: string;
   openRecall?: string;
   isInsured?: string;
+  /** Homey-local date (yyyy-mm-dd) of the last sync that evaluated the daily triggers. */
+  lastDailyCheck?: string;
 }
 
 export interface CapabilityValues {
@@ -50,7 +52,12 @@ function changedTo(previous: string | undefined, current: string, target: string
   return previous !== undefined && previous !== current && current === target;
 }
 
-export function planVehicleSync(previous: VehicleSnapshot, vehicle: VehicleRecord, now: Date): SyncPlan {
+export function planVehicleSync(
+  previous: VehicleSnapshot,
+  vehicle: VehicleRecord,
+  now: Date,
+  _timeZone: string,
+): SyncPlan {
   const events: SyncEvent[] = [];
   const daysUntilApk = daysUntilApkDate(vehicle.vervaldatum_apk, now);
 
@@ -84,6 +91,7 @@ export function planVehicleSync(previous: VehicleSnapshot, vehicle: VehicleRecor
       apkExpiryDate: vehicle.vervaldatum_apk,
       openRecall: vehicle.openstaande_terugroepactie_indicator,
       isInsured: vehicle.wam_verzekerd,
+      lastDailyCheck: "",
     },
   };
 }
@@ -93,6 +101,6 @@ export function matchesUpcomingApk(flowDays: number, daysUntilApk: number): bool
   return flowDays >= daysUntilApk;
 }
 
-export function isApkExpired(rdwDate: string, now: Date): boolean {
+export function isApkExpired(rdwDate: string, now: Date, _timeZone: string): boolean {
   return daysUntilApkDate(rdwDate, now) <= 0;
 }
