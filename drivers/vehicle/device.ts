@@ -27,6 +27,14 @@ class VehicleDevice extends Homey.Device {
   }
 
   async onUninit(): Promise<void> {
+    this.teardown();
+  }
+
+  async onDeleted(): Promise<void> {
+    this.teardown();
+  }
+
+  private teardown(): void {
     this.loop?.stop();
   }
 
