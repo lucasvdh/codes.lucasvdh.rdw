@@ -7,6 +7,8 @@ export class RdwError extends Error {
 
 /** RDW answered with a status the app can't use. */
 export class RdwHttpError extends RdwError {
+  readonly retryable: boolean = true;
+
   constructor(readonly statusCode: number) {
     super(`RDW responded with HTTP ${statusCode}`);
   }
