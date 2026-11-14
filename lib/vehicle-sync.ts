@@ -11,6 +11,7 @@ import type { VehicleRecord } from "./vehicle";
 export const STORE = {
   LICENSE_PLATE: "license_plate",
   LAST_DAILY_CHECK: "last_daily_check",
+  OUTAGE_START: "rdw_outage_start",
   APK_EXPIRY_DATE: "apk_expiry_date",
   OPEN_RECALL: "open_recall_indicator",
   IS_INSURED: "is_insured",

@@ -12,7 +12,9 @@ export class SyncHealth {
   private warning: WarningKey | undefined | "unknown" = "unknown";
   private failingSince: number | undefined;
 
-  constructor(_failingSince?: number) {}
+  constructor(failingSince?: number) {
+    this.failingSince = failingSince;
+  }
 
   /** Start of the current outage, to keep in the device store across app restarts. */
   get outageStart(): number | undefined {
@@ -30,7 +32,7 @@ export class SyncHealth {
   }
 
   failed(now: number): WarningChange {
-    this.failingSince ??= now;
+    if (this.failingSince === undefined || now < this.failingSince) this.failingSince = now;
     if (now - this.failingSince < SyncHealth.UNREACHABLE_AFTER_MS) return undefined;
     return this.change("device.warning.rdw_unreachable");
   }
