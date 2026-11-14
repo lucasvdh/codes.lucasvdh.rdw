@@ -1,7 +1,7 @@
 import Homey from "homey";
 import type PairSession from "homey/lib/PairSession";
 import { errorMessageKey } from "../../lib/error-messages";
-import { checkLicensePlate, type PlateCheck } from "../../lib/license-plate";
+import { checkLicensePlate } from "../../lib/license-plate";
 import { pairedVehicle, type PairedVehicle } from "../../lib/pairing";
 import { RdwClient } from "../../lib/rdw-client";
 import { isApkExpired, matchesUpcomingApk, RDW_YES, STORE, type SyncEvent } from "../../lib/vehicle-sync";
@@ -39,12 +39,12 @@ class VehicleDriver extends Homey.Driver {
   async onPair(session: PairSession): Promise<void> {
     const client = new RdwClient();
     let enteredPlate = "";
-    let licensePlate: PlateCheck = checkLicensePlate(enteredPlate);
     let pairingDevice: PairedVehicle | null = null;
 
     session.setHandler("showView", async (view: string) => {
       if (view !== "verify") return;
 
+      const licensePlate = checkLicensePlate(enteredPlate);
       if ("error" in licensePlate) {
         await session.showView("add_by_license_plate");
         await session.emit("error", this.homey.__(licensePlate.error));
@@ -77,7 +77,6 @@ class VehicleDriver extends Homey.Driver {
 
     session.setHandler("setLicensePlate", async (value: unknown): Promise<void> => {
       enteredPlate = typeof value === "string" ? value : "";
-      licensePlate = checkLicensePlate(enteredPlate);
     });
   }
 
