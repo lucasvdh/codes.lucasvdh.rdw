@@ -1,18 +1,31 @@
 {
   "name": "codes.lucasvdh.rdw",
   "version": "0.3.1",
-  "main": "app.ts",
+  "private": true,
+  "main": "app.js",
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
-    "homey-validate": "homey app validate --level verified",
-    "homey-build": "homey app build",
-    "build": "tsc"
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "lint": "eslint .",
+    "test": "tsc -p tsconfig.test.json && node --test --test-timeout=10000 --enable-source-maps \".test-build/tests/**/*.test.js\"",
+    "test:coverage": "npm test -- --experimental-test-coverage",
+    "check-locales": "node scripts/check-locales.mjs",
+    "homey-manifest": "node -e \"require('fs').existsSync('app.json') || require('fs').copyFileSync('.homeycompose/app.json', 'app.json')\"",
+    "homey-build": "npm run homey-manifest && homey app build",
+    "homey-validate": "npm run homey-manifest && homey app validate --level verified",
+    "homey-review": "npm run homey-manifest && homey app review",
+    "homey-run": "npm run homey-manifest && homey app run"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^1.0.1",
-    "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.5",
-    "@types/node": "^18.11.13",
-    "@types/source-map-support": "^0.5.4",
-    "homey": "^3.0.7",
-    "typescript": "^4.9.4"
+    "@tsconfig/node18": "^18.2.8",
+    "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.12",
+    "@types/node": "^18.19.130",
+    "eslint": "^10.15.0",
+    "homey": "^4.6.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2"
   }
 }

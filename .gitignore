@@ -1,6 +1,27 @@
-/.idea
-/.vscode
-/env.json
-/node_modules/
+/node_modules
+/app.json
 /.homeybuild/
+/.test-build/
+*.tsbuildinfo
+
+# Secrets and local data
+env.json
+.env
+.env.local
+credentials.json
+*.har
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and agent state
+/.idea/
+/.vscode/
+.history/
+/.claude/settings.local.json
+/.agents/
+/.codex/
+/.cursor/
 .DS_Store
+Thumbs.db
