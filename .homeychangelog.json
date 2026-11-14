@@ -22,5 +22,9 @@
   "0.3.1": {
     "en": "Fix a crash when the APK expiry date changed trigger fired",
     "nl": "Los een crash op bij het activeren van de trigger voor gewijzigde APK-vervaldatum"
+  },
+  "0.3.2": {
+    "en": "Requires Homey 12.9.0 or later.\n\nThe APK countdown was a day off. The notification on the expiry day now arrives, \"expires in a month\" comes 30 days before, \"The APK is expired\" is no longer true a day early, and the daily triggers and notifications no longer repeat after a restart or skip a day. \"Insurance has expired\" now fires when the insurance ends instead of when it starts. Flows started by \"The APK expiry date has changed\" now see the new date. A failed check is retried, and the vehicle shows a warning when the RDW has been unreachable for a day, refuses the request or no longer knows the vehicle. A deleted vehicle no longer sends notifications. Vehicles without an APK date show an empty value instead of \"--\". Pairing shows translated errors and says when a plate is not valid.",
+    "nl": "Vereist Homey 12.9.0 of nieuwer.\n\nDe APK-aftelling liep een dag achter. De melding op de vervaldag komt nu wel, \"verloopt over een maand\" komt 30 dagen van tevoren, \"De APK is verlopen\" is niet meer een dag te vroeg waar, en de dagelijkse triggers en meldingen herhalen zich niet meer na een herstart en slaan geen dag meer over. \"Verzekering is verlopen\" gaat nu af wanneer de verzekering stopt in plaats van wanneer die begint. Flows die starten met \"De APK vervaldatum is gewijzigd\" zien nu de nieuwe datum. Een mislukte controle wordt opnieuw geprobeerd, en het voertuig toont een waarschuwing als de RDW een dag niet bereikbaar is, de aanvraag weigert of het voertuig niet meer kent. Een verwijderd voertuig stuurt geen meldingen meer. Voertuigen zonder APK-datum tonen een lege waarde in plaats van \"--\". Bij het koppelen zijn foutmeldingen vertaald en meldt de app wanneer een kenteken niet geldig is."
   }
 }
