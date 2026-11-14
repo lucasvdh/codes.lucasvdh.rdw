@@ -6,7 +6,6 @@ import type { VehicleDriver } from "./driver";
 
 const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const START_SPREAD_MS = 5 * 60 * 1000;
-const SYNC_JITTER = 0.01;
 const ADDED_IN_0_2_0 = ["open_recall_indicator"];
 
 class VehicleDevice extends Homey.Device {
@@ -18,7 +17,6 @@ class VehicleDevice extends Homey.Device {
     this.loop = new PollLoop(() => this.sync(), {
       intervalMs: SYNC_INTERVAL_MS,
       startSpreadMs: START_SPREAD_MS,
-      jitter: SYNC_JITTER,
       timers: this.homey,
       log: (...args) => this.error(...args),
     });
@@ -60,6 +58,7 @@ class VehicleDevice extends Homey.Device {
     await this.setStoreValue(STORE.APK_EXPIRY_DATE, plan.snapshot.apkExpiryDate).catch(this.error);
     await this.setStoreValue(STORE.OPEN_RECALL, plan.snapshot.openRecall).catch(this.error);
     await this.setStoreValue(STORE.IS_INSURED, plan.snapshot.isInsured).catch(this.error);
+    await this.setStoreValue(STORE.LAST_DAILY_CHECK, plan.snapshot.lastDailyCheck).catch(this.error);
   }
 
   private snapshot(): VehicleSnapshot {
@@ -67,6 +66,7 @@ class VehicleDevice extends Homey.Device {
       apkExpiryDate: this.getStoreValue(STORE.APK_EXPIRY_DATE) as string | undefined,
       openRecall: this.getStoreValue(STORE.OPEN_RECALL) as string | undefined,
       isInsured: this.getStoreValue(STORE.IS_INSURED) as string | undefined,
+      lastDailyCheck: this.getStoreValue(STORE.LAST_DAILY_CHECK) as string | undefined,
     };
   }
 
