@@ -1,14 +1,9 @@
 import Homey from "homey";
 
-class RDWApp extends Homey.App {
-  /**
-   * onInit is called when the app is initialized.
-   */
+class RdwApp extends Homey.App {
   async onInit(): Promise<void> {
-    this.log("App has been initialized");
-
-    this.log('Flow card listeners have been registered')
+    this.log("[app] initialised");
   }
 }
 
-module.exports = RDWApp;
+module.exports = RdwApp;

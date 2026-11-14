@@ -1,165 +1,67 @@
-import {DeviceStore} from "./types";
-import VehicleDriver from "./driver";
-import {RDWClient, Vehicle} from "../../rdw-client";
-import {Device} from "homey";
+import Homey from "homey";
+import { RdwClient } from "../../lib/rdw-client";
+import { planVehicleSync, STORE, type CapabilityValues, type VehicleSnapshot } from "../../lib/vehicle-sync";
+import type { VehicleDriver } from "./driver";
 
-/**
- * @property {VehicleDriver} driver
- */
-class VehicleDevice extends Device {
-  private client?: RDWClient;
+const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const ADDED_IN_0_2_0 = ["open_recall_indicator"];
+
+class VehicleDevice extends Homey.Device {
+  private readonly client = new RdwClient();
   private interval?: NodeJS.Timeout;
 
   async onInit(): Promise<void> {
-    this.log('Device has been initialized');
-
-    await this.fixCapabilities();
-
-    this.client = new RDWClient();
-
-    await this.initializeClient();
-
-    this.setAvailable()
-        .catch((error: Error) => {
-          this.error(error);
-        });
-  }
-
-  async initializeClient(): Promise<void> {
-    try {
-      await this.syncVehicleData();
-    } catch (error) {
-      this.error(error);
-      console.log(error);
-    }
-
-    try {
-      this.interval = this.homey.setInterval(() => {
-        this.syncVehicleData();
-      }, 24 * 60 * 60 * 1000); // check daily
-    } catch (error) {
-      this.error(error);
-      console.log(error);
-    }
-  }
-
-  async fixCapabilities() {
-    // let oldCapabilities = [
-    // ];
-
-    let newCapabilities = [
-      "open_recall_indicator"
-    ]
-
-    // for (let i in oldCapabilities) {
-    //   let oldCapability = oldCapabilities[i]
-    //
-    //   if (this.hasCapability(oldCapability)) {
-    //     this.log('Removing old capability: ' + oldCapability)
-    //     this.removeCapability(oldCapability)
-    //         .catch(error => {
-    //           this.log(error);
-    //         })
-    //   }
-    // }
-
-    for (let i in newCapabilities) {
-      let newCapability = newCapabilities[i]
-
-      if (!this.hasCapability(newCapability)) {
-        this.log('Adding new capability: ' + newCapability)
-        await this.addCapability(newCapability)
-            .catch(error => {
-              this.log(error);
-            })
-      }
-    }
-  }
-
-  private getLicensePlate(): string {
-    const store = this.getStore() as DeviceStore;
-    return store.license_plate;
-  }
-
-  async syncVehicleData(): Promise<void> {
-    this.log('Fetching latest vehicle data from RDW');
-
-    this.client
-        ?.fetchVehicleData(this.getLicensePlate())
-        .then((vehicle: Vehicle | undefined) => {
-          this.syncVehicleToCapabilities(vehicle);
-        })
-        .catch((error: Error) => {
-          this.error(error);
-          console.log(error);
-        });
+    await this.migrate();
+    this.interval = this.homey.setInterval(() => this.syncInBackground(), SYNC_INTERVAL_MS);
+    this.syncInBackground();
+    await this.setAvailable().catch(this.error);
   }
 
   async onUninit(): Promise<void> {
-    this.homey.clearInterval(this.interval)
+    this.homey.clearInterval(this.interval);
   }
 
-  private syncVehicleToCapabilities(vehicle: Vehicle | undefined) {
-    if (vehicle === undefined) {
-      throw new Error('Vehicle not found!');
+  private async migrate(): Promise<void> {
+    for (const capability of ADDED_IN_0_2_0) {
+      if (!this.hasCapability(capability)) await this.addCapability(capability).catch(this.error);
     }
-
-    this.log('Syncing vehicle data to capabilities');
-
-    const hasExpiryDateChanged = this.getStoreValue('apk_expiry_date') !== vehicle.vervaldatum_apk;
-    const hasOpenRecallChanged = this.getStoreValue('open_recall_indicator') !== vehicle.openstaande_terugroepactie_indicator;
-    const hasIsInsuredChanged = this.getStoreValue('is_insured') !== vehicle.wam_verzekerd;
-
-    this.setCapabilityValue('license_plate', vehicle.kenteken);
-    this.setCapabilityValue('vehicle_type', vehicle.voertuigsoort);
-    this.setCapabilityValue('brand', vehicle.merk);
-    this.setCapabilityValue('trade_name', vehicle.handelsbenaming);
-    this.setCapabilityValue('is_insured', vehicle.wam_verzekerd);
-    this.setCapabilityValue('apk_expiry_date', this.formatDate(vehicle.vervaldatum_apk));
-    this.setCapabilityValue('open_recall_indicator', vehicle.openstaande_terugroepactie_indicator);
-
-    const driver = this.getVehicleDriver();
-
-    driver.triggerAPKExpiryTriggers(this, {
-      date: vehicle.vervaldatum_apk,
-    });
-
-    if (hasExpiryDateChanged) {
-      driver.triggerAPKExpiryDateChangedTrigger(this, {
-        date: this.formatDate(vehicle.vervaldatum_apk),
-      });
-    }
-
-    if (hasOpenRecallChanged && vehicle.openstaande_terugroepactie_indicator === 'Ja') {
-      driver.triggerOpenRecallTrigger(this);
-    }
-
-    if (hasIsInsuredChanged && vehicle.wam_verzekerd === 'Ja') {
-      driver.triggerInsuranceHasExpiredTrigger(this);
-    }
-
-    this.setStoreValue('apk_expiry_date', vehicle.vervaldatum_apk)
-        .catch((error: Error) => this.error(error));
-    this.setStoreValue('open_recall_indicator', vehicle.openstaande_terugroepactie_indicator)
-        .catch((error: Error) => this.error(error));
-    this.setStoreValue('is_insured', vehicle.wam_verzekerd)
-        .catch((error: Error) => this.error(error));
   }
 
-  private getVehicleDriver(): VehicleDriver {
-    return this.driver as VehicleDriver;
+  private syncInBackground(): void {
+    this.sync().catch((err) => this.error("[sync] failed", err));
   }
 
-  private formatDate(input: string) {
-    // Convert the input string to a Date object
-    let year = input.substring(0, 4);
-    let month = input.substring(4, 6);
-    let day = input.substring(6, 8);
+  private async sync(): Promise<void> {
+    this.log("[sync] fetching vehicle data from RDW");
+    const vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
+    if (vehicle === undefined) throw new Error("Vehicle not found");
 
-    return `${year}-${month}-${day}`;
+    const plan = planVehicleSync(this.snapshot(), vehicle, new Date());
+    await this.setCapabilities(plan.capabilities);
+
+    const driver = this.driver as VehicleDriver;
+    for (const event of plan.events) {
+      await driver.fire(this, event).catch((err) => this.error(`[sync] ${event.type} failed`, err));
+    }
+
+    await this.setStoreValue(STORE.APK_EXPIRY_DATE, plan.snapshot.apkExpiryDate).catch(this.error);
+    await this.setStoreValue(STORE.OPEN_RECALL, plan.snapshot.openRecall).catch(this.error);
+    await this.setStoreValue(STORE.IS_INSURED, plan.snapshot.isInsured).catch(this.error);
+  }
+
+  private snapshot(): VehicleSnapshot {
+    return {
+      apkExpiryDate: this.getStoreValue(STORE.APK_EXPIRY_DATE) as string | undefined,
+      openRecall: this.getStoreValue(STORE.OPEN_RECALL) as string | undefined,
+      isInsured: this.getStoreValue(STORE.IS_INSURED) as string | undefined,
+    };
+  }
+
+  private async setCapabilities(values: CapabilityValues): Promise<void> {
+    for (const [capability, value] of Object.entries(values)) {
+      await this.setCapabilityValue(capability, value).catch(this.error);
+    }
   }
 }
 
 module.exports = VehicleDevice;
-
-export default VehicleDevice;
