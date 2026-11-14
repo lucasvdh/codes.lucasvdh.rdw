@@ -1,5 +1,5 @@
 import Homey from "homey";
-import { PollLoop } from "../../lib/poll-loop";
+import { PollLoop, type PollRun } from "../../lib/poll-loop";
 import { RdwClient } from "../../lib/rdw-client";
 import { SYNC_SCHEDULE } from "../../lib/sync-schedule";
 import { SyncHealth, type WarningChange } from "../../lib/sync-health";
@@ -17,7 +17,7 @@ class VehicleDevice extends Homey.Device {
 
   async onInit(): Promise<void> {
     await this.migrate();
-    this.loop = new PollLoop(() => this.sync(), {
+    this.loop = new PollLoop((run) => this.sync(run), {
       ...SYNC_SCHEDULE,
       timers: this.homey,
       log: (...args) => this.error(...args),
@@ -44,15 +44,16 @@ class VehicleDevice extends Homey.Device {
     }
   }
 
-  private async sync(): Promise<void> {
+  private async sync(run: PollRun): Promise<void> {
     this.log("[sync] fetching vehicle data from RDW");
     let vehicle: VehicleRecord | undefined;
     try {
       vehicle = await this.client.fetchVehicle(this.getStoreValue(STORE.LICENSE_PLATE) as string);
     } catch (err) {
-      await this.applyWarning(this.health.failed(Date.now()));
+      if (run.isCurrent()) await this.applyWarning(this.health.failed(Date.now()));
       throw err;
     }
+    if (!run.isCurrent()) return;
     if (vehicle === undefined) {
       this.log("[sync] the RDW has no vehicle for this plate");
       await this.applyWarning(this.health.notFound());
