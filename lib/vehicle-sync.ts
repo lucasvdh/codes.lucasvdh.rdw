@@ -1,8 +1,17 @@
-import { daysUntilApkDate, formatApkDate } from "./apk-date";
+import {
+  calendarDateIn,
+  daysBetween,
+  formatApkDate,
+  isoDate,
+  parseIsoDate,
+  parseRdwDate,
+  type CalendarDate,
+} from "./apk-date";
 import type { VehicleRecord } from "./vehicle";
 
 export const STORE = {
   LICENSE_PLATE: "license_plate",
+  LAST_DAILY_CHECK: "last_daily_check",
   APK_EXPIRY_DATE: "apk_expiry_date",
   OPEN_RECALL: "open_recall_indicator",
   IS_INSURED: "is_insured",
@@ -10,6 +19,8 @@ export const STORE = {
 
 export const RDW_YES = "Ja";
 export const RDW_NO = "Nee";
+
+const MONTH_NOTICE_DAYS = 30;
 
 /** What the device remembers from the previous sync (device store). */
 export interface VehicleSnapshot {
@@ -52,19 +63,45 @@ function changedTo(previous: string | undefined, current: string, target: string
   return previous !== undefined && previous !== current && current === target;
 }
 
+/** True when a countdown went from above `threshold` to `threshold` or below. */
+function crossed(before: number, now: number, threshold: number): boolean {
+  return before > threshold && now <= threshold;
+}
+
+/**
+ * Notifications and the daily APK triggers. A missed day still crosses a threshold; without an
+ * earlier check (first sync after pairing or after updating the app) yesterday is assumed.
+ */
+function dailyApkEvents(expiry: CalendarDate, today: CalendarDate, lastCheck: CalendarDate | undefined): SyncEvent[] {
+  const days = daysBetween(today, expiry);
+  const daysAtLastCheck = lastCheck ? daysBetween(lastCheck, expiry) : days + 1;
+  const events: SyncEvent[] = [];
+
+  if (crossed(daysAtLastCheck, days, 0)) {
+    events.push({ type: "notification", key: "messages.has_expired" });
+  } else if (crossed(daysAtLastCheck, days, MONTH_NOTICE_DAYS)) {
+    events.push({ type: "notification", key: "messages.expires_in_a_month" });
+  }
+  if (days <= 0) events.push({ type: "apk_expired" });
+  events.push({ type: "upcoming_apk_expiry_date", daysUntilApk: days });
+  return events;
+}
+
 export function planVehicleSync(
   previous: VehicleSnapshot,
   vehicle: VehicleRecord,
   now: Date,
-  _timeZone: string,
+  timeZone: string,
 ): SyncPlan {
+  const today = calendarDateIn(timeZone, now);
+  const todayIso = isoDate(today);
+  const expiry = parseRdwDate(vehicle.vervaldatum_apk);
   const events: SyncEvent[] = [];
-  const daysUntilApk = daysUntilApkDate(vehicle.vervaldatum_apk, now);
 
-  if (daysUntilApk === 0) events.push({ type: "notification", key: "messages.has_expired" });
-  if (daysUntilApk === 30) events.push({ type: "notification", key: "messages.expires_in_a_month" });
-  if (daysUntilApk <= 0) events.push({ type: "apk_expired" });
-  events.push({ type: "upcoming_apk_expiry_date", daysUntilApk });
+  if (expiry && previous.lastDailyCheck !== todayIso) {
+    const lastCheck = previous.lastDailyCheck ? parseIsoDate(previous.lastDailyCheck) : undefined;
+    events.push(...dailyApkEvents(expiry, today, lastCheck));
+  }
 
   if (previous.apkExpiryDate !== undefined && previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
     events.push({ type: "apk_expiry_date_changed", newDate: formatApkDate(vehicle.vervaldatum_apk) });
@@ -91,7 +128,7 @@ export function planVehicleSync(
       apkExpiryDate: vehicle.vervaldatum_apk,
       openRecall: vehicle.openstaande_terugroepactie_indicator,
       isInsured: vehicle.wam_verzekerd,
-      lastDailyCheck: "",
+      lastDailyCheck: todayIso,
     },
   };
 }
@@ -101,6 +138,7 @@ export function matchesUpcomingApk(flowDays: number, daysUntilApk: number): bool
   return flowDays >= daysUntilApk;
 }
 
-export function isApkExpired(rdwDate: string, now: Date, _timeZone: string): boolean {
-  return daysUntilApkDate(rdwDate, now) <= 0;
+export function isApkExpired(rdwDate: string, now: Date, timeZone: string): boolean {
+  const expiry = parseRdwDate(rdwDate);
+  return expiry !== undefined && daysBetween(calendarDateIn(timeZone, now), expiry) <= 0;
 }
