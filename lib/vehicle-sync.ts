@@ -9,6 +9,7 @@ export const STORE = {
 } as const;
 
 export const RDW_YES = "Ja";
+export const RDW_NO = "Nee";
 
 /** What the device remembers from the previous sync (device store). */
 export interface VehicleSnapshot {
@@ -44,6 +45,11 @@ export interface SyncPlan {
   snapshot: Required<VehicleSnapshot>;
 }
 
+/** A change from a known earlier value; the first observation after pairing is only a baseline. */
+function changedTo(previous: string | undefined, current: string, target: string): boolean {
+  return previous !== undefined && previous !== current && current === target;
+}
+
 export function planVehicleSync(previous: VehicleSnapshot, vehicle: VehicleRecord, now: Date): SyncPlan {
   const events: SyncEvent[] = [];
   const daysUntilApk = daysUntilApkDate(vehicle.vervaldatum_apk, now);
@@ -53,14 +59,13 @@ export function planVehicleSync(previous: VehicleSnapshot, vehicle: VehicleRecor
   if (daysUntilApk <= 0) events.push({ type: "apk_expired" });
   events.push({ type: "upcoming_apk_expiry_date", daysUntilApk });
 
-  if (previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
+  if (previous.apkExpiryDate !== undefined && previous.apkExpiryDate !== vehicle.vervaldatum_apk) {
     events.push({ type: "apk_expiry_date_changed", newDate: formatApkDate(vehicle.vervaldatum_apk) });
   }
-  if (previous.openRecall !== vehicle.openstaande_terugroepactie_indicator
-    && vehicle.openstaande_terugroepactie_indicator === RDW_YES) {
+  if (changedTo(previous.openRecall, vehicle.openstaande_terugroepactie_indicator, RDW_YES)) {
     events.push({ type: "open_recall" });
   }
-  if (previous.isInsured !== vehicle.wam_verzekerd && vehicle.wam_verzekerd === RDW_YES) {
+  if (previous.isInsured === RDW_YES && vehicle.wam_verzekerd === RDW_NO) {
     events.push({ type: "insurance_has_expired" });
   }
 
