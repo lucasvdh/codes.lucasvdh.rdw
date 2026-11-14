@@ -83,11 +83,14 @@ export class PollLoop {
       this.failures = 0;
       delayMs = this.withJitter(this.options.intervalMs);
     } catch (err) {
-      this.failures++;
-      delayMs = isPermanent(err)
-        ? this.withJitter(this.options.intervalMs)
-        : Math.max(this.backoffMs(), Math.min(retryAfterOf(err), this.options.intervalMs));
-      this.options.log(`[poll] run failed (${this.failures}x), retrying in ${Math.round(delayMs / 1000)} s`, err);
+      if (isPermanent(err)) {
+        this.failures = 0;
+        delayMs = this.withJitter(this.options.intervalMs);
+      } else {
+        this.failures++;
+        delayMs = Math.max(this.backoffMs(), Math.min(retryAfterOf(err), this.options.intervalMs));
+      }
+      this.options.log(`[poll] run failed, next run in ${Math.round(delayMs / 1000)} s`, err);
     }
     if (this.isCurrent(generation)) this.schedule(delayMs);
   }
