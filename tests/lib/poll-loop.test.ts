@@ -18,7 +18,7 @@ function failingThenOk(failures: number): { task: () => Promise<void>; calls: ()
 }
 
 describe("PollLoop", () => {
-  it("retries a failed sync within the hour instead of the next day", async () => {
+  it("retries a failed sync within the hour instead of the next day (#8)", async () => {
     const timers = new FakeTimers();
     const { task } = failingThenOk(1);
     new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {} }).start();
@@ -29,7 +29,7 @@ describe("PollLoop", () => {
     assert.ok(timers.delays()[0] <= HOUR_MS, `next run in ${timers.delays()[0]} ms`);
   });
 
-  it("doubles the retry delay per failure up to the maximum", async () => {
+  it("doubles the retry delay per failure up to the maximum (#8)", async () => {
     const timers = new FakeTimers();
     const { task } = failingThenOk(10);
     const options = { intervalMs: DAY_MS, timers, log: () => {}, retryBaseMs: 1000, retryMaxMs: 8000, random: () => 1 };
@@ -44,7 +44,7 @@ describe("PollLoop", () => {
     assert.deepEqual(delays, [1000, 2000, 4000, 8000, 8000]);
   });
 
-  it("goes back to the daily interval after a successful retry", async () => {
+  it("goes back to the daily interval after a successful retry (#8)", async () => {
     const timers = new FakeTimers();
     const { task, calls } = failingThenOk(2);
     new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {}, random: () => 1 }).start();
@@ -56,7 +56,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [DAY_MS]);
   });
 
-  it("waits at least as long as a Retry-After asks", async () => {
+  it("waits at least as long as a Retry-After asks (#8)", async () => {
     const timers = new FakeTimers();
     const rateLimited = async () => {
       throw Object.assign(new Error("429"), { retryAfterMs: 2 * HOUR_MS });
@@ -67,7 +67,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [2 * HOUR_MS]);
   });
 
-  it("never waits longer than the interval, whatever Retry-After says", async () => {
+  it("never waits longer than the interval, whatever Retry-After says (#9)", async () => {
     const timers = new FakeTimers();
     const rateLimited = async () => {
       throw Object.assign(new Error("503"), { retryAfterMs: 365 * DAY_MS });
@@ -78,7 +78,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [DAY_MS]);
   });
 
-  it("waits for the next interval after a failure that a retry won't fix", async () => {
+  it("waits for the next interval after a failure that a retry won't fix (#22)", async () => {
     const timers = new FakeTimers();
     const badRequest = async () => {
       throw Object.assign(new Error("400"), { retryable: false });
@@ -89,7 +89,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [DAY_MS]);
   });
 
-  it("starts the backoff from the beginning after permanent failures", async () => {
+  it("starts the backoff from the beginning after permanent failures (#33)", async () => {
     const timers = new FakeTimers();
     const errors = [{ retryable: false }, { retryable: false }, {}];
     const task = async () => {
@@ -103,7 +103,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [1000]);
   });
 
-  it("spreads the first run over the start window", async () => {
+  it("spreads the first run over the start window (#8)", async () => {
     const timers = new FakeTimers();
     const { task } = failingThenOk(0);
     new PollLoop(task, { intervalMs: DAY_MS, timers, log: () => {}, startSpreadMs: 60_000, random: () => 0.5 }).start();
@@ -111,7 +111,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), [30_000]);
   });
 
-  it("does not reschedule when stopped while a run is in flight", async () => {
+  it("does not reschedule when stopped while a run is in flight (#8)", async () => {
     const timers = new FakeTimers();
     let finish: () => void = () => {};
     const slow = () => new Promise<void>((resolve) => { finish = resolve; });
@@ -125,7 +125,7 @@ describe("PollLoop", () => {
     assert.deepEqual(timers.delays(), []);
   });
 
-  it("tells a running task once the loop has stopped", async () => {
+  it("tells a running task once the loop has stopped (#26)", async () => {
     const timers = new FakeTimers();
     let finish: () => void = () => {};
     let currentAfterStop: boolean | undefined;
@@ -143,7 +143,7 @@ describe("PollLoop", () => {
     assert.equal(currentAfterStop, false);
   });
 
-  it("never overlaps runs", async () => {
+  it("never overlaps runs (#8)", async () => {
     const timers = new FakeTimers();
     let running = 0;
     let maxRunning = 0;

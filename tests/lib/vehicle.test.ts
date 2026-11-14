@@ -21,7 +21,7 @@ describe("parseVehicleResponse", () => {
     assert.equal(parseVehicleResponse([]), undefined);
   });
 
-  it("throws for anything that is not a list, such as a Socrata error object", () => {
+  it("throws for anything that is not a list, such as a Socrata error object (#21)", () => {
     assert.throws(() => parseVehicleResponse({ error: true, message: "query failed" }), RdwResponseError);
   });
 

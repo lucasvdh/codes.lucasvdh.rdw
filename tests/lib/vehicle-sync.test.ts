@@ -52,17 +52,17 @@ describe("planVehicleSync", () => {
 });
 
 describe("planVehicleSync: insurance and recall triggers", () => {
-  it("fires insurance-has-expired when the insurance ends (Ja to Nee)", () => {
+  it("fires insurance-has-expired when the insurance ends (Ja to Nee) (#12)", () => {
     const events = planVehicleSync(SAME, vehicle({ wam_verzekerd: "Nee" }), NOW, TZ).events;
     assert.ok(types(events).includes("insurance_has_expired"));
   });
 
-  it("does not fire insurance-has-expired when the insurance starts (Nee to Ja)", () => {
+  it("does not fire insurance-has-expired when the insurance starts (Nee to Ja) (#12)", () => {
     const events = planVehicleSync({ ...SAME, isInsured: "Nee" }, vehicle(), NOW, TZ).events;
     assert.ok(!types(events).includes("insurance_has_expired"));
   });
 
-  it("does not fire change triggers on the first sync after pairing", () => {
+  it("does not fire change triggers on the first sync after pairing (#12)", () => {
     const firstSync = { apkExpiryDate: "20270115" };
     const uninsuredWithRecall = vehicle({ wam_verzekerd: "Nee", openstaande_terugroepactie_indicator: "Ja" });
     assert.deepEqual(types(planVehicleSync(firstSync, vehicle(), NOW, TZ).events), ["upcoming_apk_expiry_date"]);
@@ -73,17 +73,17 @@ describe("planVehicleSync: insurance and recall triggers", () => {
 describe("planVehicleSync: vehicles without an APK date (mopeds, trailers)", () => {
   const noApk = vehicle({ vervaldatum_apk: "", handelsbenaming: "" });
 
-  it("leaves missing values empty instead of showing placeholders", () => {
+  it("leaves missing values empty instead of showing placeholders (#14)", () => {
     const { capabilities } = planVehicleSync(SAME, noApk, NOW, TZ);
     assert.equal(capabilities.apk_expiry_date, null);
     assert.equal(capabilities.trade_name, null);
   });
 
-  it("does not fire 'expiry date changed' when the date disappears", () => {
+  it("does not fire 'expiry date changed' when the date disappears (#14)", () => {
     assert.deepEqual(types(planVehicleSync(SAME, noApk, NOW, TZ).events), []);
   });
 
-  it("fires 'expiry date changed' when a vehicle gets its first APK date", () => {
+  it("fires 'expiry date changed' when a vehicle gets its first APK date (#14)", () => {
     const events = planVehicleSync({ ...SAME, apkExpiryDate: "" }, vehicle(), NOW, TZ).events;
     assert.ok(types(events).includes("apk_expiry_date_changed"));
   });
@@ -96,43 +96,43 @@ describe("planVehicleSync: APK days and notifications", () => {
   const notifications = (events: SyncEvent[]) => events.flatMap((e) => (e.type === "notification" ? [e.key] : []));
   const checkedOn = (day: string) => ({ ...SAME, apkExpiryDate: "20261120", lastDailyCheck: day });
 
-  it("counts calendar days in Homey's timezone, late in the evening too", () => {
+  it("counts calendar days in Homey's timezone, late in the evening too (#13)", () => {
     const lateEvening = new Date("2026-11-14T22:30:00Z"); // 23:30 in Amsterdam
     assert.equal(daysUntilApk(planVehicleSync(SAME, vehicle(EXPIRY), lateEvening, TZ).events), 6);
   });
 
-  it("sends 'has expired' on the expiry day", () => {
+  it("sends 'has expired' on the expiry day (#13)", () => {
     const events = planVehicleSync(checkedOn("2026-11-19"), vehicle(EXPIRY), new Date("2026-11-20T09:00:00Z"), TZ).events;
     assert.deepEqual(notifications(events), ["messages.has_expired"]);
   });
 
-  it("sends 'expires in a month' 30 calendar days before", () => {
+  it("sends 'expires in a month' 30 calendar days before (#13)", () => {
     const events = planVehicleSync(checkedOn("2026-10-20"), vehicle(EXPIRY), new Date("2026-10-21T09:00:00Z"), TZ).events;
     assert.deepEqual(notifications(events), ["messages.expires_in_a_month"]);
   });
 
-  it("still sends 'expires in a month' when the 30th day was missed", () => {
+  it("still sends 'expires in a month' when the 30th day was missed (#13)", () => {
     const events = planVehicleSync(checkedOn("2026-10-19"), vehicle(EXPIRY), new Date("2026-10-22T09:00:00Z"), TZ).events;
     assert.deepEqual(notifications(events), ["messages.expires_in_a_month"]);
   });
 
-  it("evaluates the daily triggers and notifications once per day, also after a restart", () => {
+  it("evaluates the daily triggers and notifications once per day, also after a restart (#13)", () => {
     const events = planVehicleSync(checkedOn("2026-11-20"), vehicle(EXPIRY), new Date("2026-11-20T15:00:00Z"), TZ).events;
     assert.deepEqual(events, []);
   });
 
-  it("does not announce a month to go for a vehicle paired 10 days before its APK", () => {
+  it("does not announce a month to go for a vehicle paired 10 days before its APK (#13)", () => {
     const events = planVehicleSync({ apkExpiryDate: "20261120" }, vehicle(EXPIRY), new Date("2026-11-10T09:00:00Z"), TZ).events;
     assert.deepEqual(notifications(events), []);
   });
 });
 
 describe("isApkExpired", () => {
-  it("is not expired late on the day before the expiry date", () => {
+  it("is not expired late on the day before the expiry date (#13)", () => {
     assert.equal(isApkExpired("20261120", new Date("2026-11-19T22:30:00Z"), TZ), false);
   });
 
-  it("is expired on the expiry date", () => {
+  it("is expired on the expiry date (#13)", () => {
     assert.equal(isApkExpired("20261120", new Date("2026-11-20T09:00:00Z"), TZ), true);
   });
 });

@@ -8,14 +8,14 @@ describe("normalizeLicensePlate", () => {
     assert.equal(normalizeLicensePlate(" AE 01 IO "), "AE01IO");
   });
 
-  it("returns undefined when nothing usable is left", () => {
+  it("returns undefined when nothing usable is left (#11)", () => {
     assert.equal(normalizeLicensePlate(""), undefined);
     assert.equal(normalizeLicensePlate(" - "), undefined);
     assert.equal(normalizeLicensePlate(null), undefined);
     assert.equal(normalizeLicensePlate(42), undefined);
   });
 
-  it("rejects input longer than any plate", () => {
+  it("rejects input longer than any plate (#11)", () => {
     assert.equal(normalizeLicensePlate("AE01IOAE01IOAE01IO"), undefined);
   });
 });
@@ -31,7 +31,7 @@ describe("checkLicensePlate", () => {
     assert.deepEqual(checkLicensePlate(undefined), { error: "error.license_plate_missing" });
   });
 
-  it("says the plate is not valid when it is too long", () => {
+  it("says the plate is not valid when it is too long (#23)", () => {
     assert.deepEqual(checkLicensePlate("AE01IOAE01IO"), { error: "error.license_plate_invalid" });
   });
 });

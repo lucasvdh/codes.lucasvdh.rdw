@@ -20,13 +20,13 @@ describe("RdwClient.fetchVehicle", () => {
     assert.deepEqual(server.requests, ["/api/id/m9d7-ebf2.json?$where=(UPPER(kenteken)=UPPER(%27AE01IO%27))"]);
   });
 
-  it("queries the normalized plate, so a legacy stored value can't break the query", async () => {
+  it("queries the normalized plate, so a legacy stored value can't break the query (#22)", async () => {
     server = await fakeServer(() => json([]));
     await new RdwClient({ baseUrl: server.url }).fetchVehicle("ae-01'io)");
     assert.deepEqual(server.requests, ["/api/id/m9d7-ebf2.json?$where=(UPPER(kenteken)=UPPER(%27AE01IO%27))"]);
   });
 
-  it("marks client errors as permanent and server errors as worth a retry", () => {
+  it("marks client errors as permanent and server errors as worth a retry (#22)", () => {
     assert.equal(new RdwHttpError(400).retryable, false);
     assert.equal(new RdwHttpError(404).retryable, false);
     assert.equal(new RdwHttpError(408).retryable, true);
@@ -44,7 +44,7 @@ describe("RdwClient.fetchVehicle", () => {
       err instanceof RdwHttpError && err.statusCode === 400);
   });
 
-  it("throws RdwResponseError for a JSON answer that is not a list of vehicles", async () => {
+  it("throws RdwResponseError for a JSON answer that is not a list of vehicles (#21)", async () => {
     server = await fakeServer(() => json({ error: true, message: "Service temporarily unavailable" }));
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), RdwResponseError);
   });
@@ -54,30 +54,30 @@ describe("RdwClient.fetchVehicle", () => {
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), RdwResponseError);
   });
 
-  it("gives up on a request RDW never answers", async () => {
+  it("gives up on a request RDW never answers (#7)", async () => {
     server = await fakeServer(() => "hang");
     await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
   });
 
-  it("gives up on a response that stops halfway", async () => {
+  it("gives up on a response that stops halfway (#7)", async () => {
     server = await fakeServer(() => "stall");
     await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
   });
 
-  it("reports how long to wait when RDW throttles with Retry-After in seconds", async () => {
+  it("reports how long to wait when RDW throttles with Retry-After in seconds (#9)", async () => {
     server = await fakeServer(() => ({ status: 429, headers: { "retry-after": "120" } }));
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), (err: unknown) =>
       err instanceof RdwRateLimitError && err.retryAfterMs === 120_000);
   });
 
-  it("reads a Retry-After date on a 503", async () => {
+  it("reads a Retry-After date on a 503 (#9)", async () => {
     const now = Date.parse("2026-06-01T12:00:00Z");
     server = await fakeServer(() => ({ status: 503, headers: { "retry-after": "Mon, 01 Jun 2026 12:05:00 GMT" } }));
     await assert.rejects(new RdwClient({ baseUrl: server.url, now: () => now }).fetchVehicle("AE01IO"), (err: unknown) =>
       err instanceof RdwRateLimitError && err.retryAfterMs === 300_000);
   });
 
-  it("throttles without a usable Retry-After", async () => {
+  it("throttles without a usable Retry-After (#9)", async () => {
     server = await fakeServer(() => ({ status: 429, headers: { "retry-after": "soon" } }));
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), (err: unknown) =>
       err instanceof RdwRateLimitError && err.retryAfterMs === undefined);

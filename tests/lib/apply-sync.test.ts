@@ -5,7 +5,7 @@ import { planVehicleSync } from "../../lib/vehicle-sync";
 import { vehicle } from "../helpers/fixtures";
 
 describe("applySyncPlan", () => {
-  it("saves the new values before firing triggers, so conditions in the same Flow see them", async () => {
+  it("saves the new values before firing triggers, so conditions in the same Flow see them (#18)", async () => {
     const steps: string[] = [];
     const renewed = planVehicleSync(
       { apkExpiryDate: "20260101", openRecall: "Nee", isInsured: "Ja", lastDailyCheck: "2026-05-31" },
@@ -26,7 +26,7 @@ describe("applySyncPlan", () => {
     assert.ok(lastWrite < firstFire, steps.join(", "));
   });
 
-  it("stops writing and firing as soon as the sync is no longer current (vehicle deleted mid-sync)", async () => {
+  it("stops writing and firing as soon as the sync is no longer current (vehicle deleted mid-sync) (#31)", async () => {
     const steps: string[] = [];
     let current = true;
     const plan = planVehicleSync({}, vehicle(), new Date("2026-06-01T12:00:00Z"), "Europe/Amsterdam");
