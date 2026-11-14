@@ -7,10 +7,11 @@ export interface SyncTarget {
   fire(event: SyncEvent): Promise<void>;
 }
 
+/** Triggers fire last: conditions in the triggered Flows read the capabilities and the store. */
 export async function applySyncPlan(plan: SyncPlan, target: SyncTarget): Promise<void> {
   for (const [id, value] of Object.entries(plan.capabilities) as [keyof CapabilityValues, string | null][]) {
     await target.setCapability(id, value);
   }
-  for (const event of plan.events) await target.fire(event);
   await target.saveSnapshot(plan.snapshot);
+  for (const event of plan.events) await target.fire(event);
 }
