@@ -21,7 +21,7 @@ export interface RetryAfter {
   retryAfterMs: number;
 }
 
-/** Passed to the task, which checks it after every await before touching the device. */
+/** Passed to the task, which checks it after every await before touching the device (see applySyncPlan). */
 export interface PollRun {
   isCurrent(): boolean;
 }
