@@ -20,6 +20,19 @@ describe("RdwClient.fetchVehicle", () => {
     assert.deepEqual(server.requests, ["/api/id/m9d7-ebf2.json?$where=(UPPER(kenteken)=UPPER(%27AE01IO%27))"]);
   });
 
+  it("queries the normalized plate, so a legacy stored value can't break the query", async () => {
+    server = await fakeServer(() => json([]));
+    await new RdwClient({ baseUrl: server.url }).fetchVehicle("ae-01'io)");
+    assert.deepEqual(server.requests, ["/api/id/m9d7-ebf2.json?$where=(UPPER(kenteken)=UPPER(%27AE01IO%27))"]);
+  });
+
+  it("marks client errors as permanent and server errors as worth a retry", () => {
+    assert.equal(new RdwHttpError(400).retryable, false);
+    assert.equal(new RdwHttpError(404).retryable, false);
+    assert.equal(new RdwHttpError(408).retryable, true);
+    assert.equal(new RdwHttpError(500).retryable, true);
+  });
+
   it("returns undefined for an unknown plate", async () => {
     server = await fakeServer(() => json([]));
     assert.equal(await new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), undefined);
