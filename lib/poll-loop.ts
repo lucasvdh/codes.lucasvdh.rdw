@@ -21,6 +21,11 @@ export interface RetryAfter {
   retryAfterMs: number;
 }
 
+/** Passed to the task, which checks it after every await before touching the device. */
+export interface PollRun {
+  isCurrent(): boolean;
+}
+
 /** A failure that will repeat on every retry, e.g. a 400. */
 function isPermanent(err: unknown): boolean {
   return (err as { retryable?: unknown } | undefined)?.retryable === false;
@@ -43,7 +48,7 @@ export class PollLoop {
   private readonly random: () => number;
 
   constructor(
-    private readonly task: () => Promise<void>,
+    private readonly task: (run: PollRun) => Promise<void>,
     private readonly options: PollLoopOptions,
   ) {
     this.random = options.random ?? Math.random;
@@ -74,7 +79,7 @@ export class PollLoop {
   private async run(generation: number): Promise<void> {
     let delayMs: number;
     try {
-      await this.task();
+      await this.task({ isCurrent: () => true });
       this.failures = 0;
       delayMs = this.withJitter(this.options.intervalMs);
     } catch (err) {
