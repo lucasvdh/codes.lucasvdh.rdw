@@ -4,6 +4,10 @@
     "en": "Insurance has expired",
     "nl": "Verzekering is verlopen"
   },
+  "hint": {
+    "en": "Fires when the RDW no longer registers the vehicle as insured (WAM).",
+    "nl": "Gaat af wanneer de RDW het voertuig niet meer als verzekerd (WAM) registreert."
+  },
   "args": [
     {
       "name": "device",
