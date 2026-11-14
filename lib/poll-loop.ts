@@ -79,7 +79,7 @@ export class PollLoop {
   private async run(generation: number): Promise<void> {
     let delayMs: number;
     try {
-      await this.task({ isCurrent: () => true });
+      await this.task({ isCurrent: () => this.isCurrent(generation) });
       this.failures = 0;
       delayMs = this.withJitter(this.options.intervalMs);
     } catch (err) {
