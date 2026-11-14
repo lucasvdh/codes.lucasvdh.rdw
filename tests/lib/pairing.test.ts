@@ -13,7 +13,7 @@ describe("pairedVehicle", () => {
     });
   });
 
-  it("names a vehicle without a model after its brand, and one without either after its plate", () => {
+  it("names a vehicle without a model after its brand, and one without either after its plate (#14)", () => {
     assert.equal(pairedVehicle(vehicle({ handelsbenaming: "" }), "AE01IO").name, "TESTMERK");
     assert.equal(pairedVehicle(vehicle({ merk: "", handelsbenaming: "" }), "AE01IO").name, "AE01IO");
   });
