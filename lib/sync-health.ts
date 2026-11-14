@@ -21,7 +21,7 @@ export class SyncHealth {
     return this.change("device.warning.vehicle_not_found");
   }
 
-  failed(): WarningChange {
+  failed(_now?: number): WarningChange {
     this.failures++;
     if (this.failures < SyncHealth.FAILURES_BEFORE_WARNING) return undefined;
     return this.change("device.warning.rdw_unreachable");
