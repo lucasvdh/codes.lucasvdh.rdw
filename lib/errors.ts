@@ -14,3 +14,10 @@ export class RdwHttpError extends RdwError {
 
 /** RDW answered, but not with JSON. */
 export class RdwResponseError extends RdwError {}
+
+/** RDW didn't answer in time. */
+export class RdwTimeoutError extends RdwError {
+  constructor(readonly timeoutMs: number) {
+    super(`RDW did not answer within ${timeoutMs} ms`);
+  }
+}

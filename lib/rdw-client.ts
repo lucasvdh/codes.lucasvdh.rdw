@@ -8,6 +8,7 @@ const VEHICLES_PATH = "/api/id/m9d7-ebf2.json";
 
 export interface RdwClientOptions {
   baseUrl?: string;
+  timeoutMs?: number;
 }
 
 export class RdwClient {

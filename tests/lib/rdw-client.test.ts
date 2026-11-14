@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { RdwHttpError, RdwResponseError } from "../../lib/errors";
+import { RdwHttpError, RdwResponseError, RdwTimeoutError } from "../../lib/errors";
 import { RdwClient } from "../../lib/rdw-client";
 import { fakeServer, json, type FakeServer } from "../helpers/fake-server";
 import { vehicleResponse } from "../helpers/fixtures";
@@ -34,5 +34,10 @@ describe("RdwClient.fetchVehicle", () => {
   it("throws RdwResponseError when the body is not JSON", async () => {
     server = await fakeServer(() => ({ status: 200, body: "<html>maintenance</html>" }));
     await assert.rejects(new RdwClient({ baseUrl: server.url }).fetchVehicle("AE01IO"), RdwResponseError);
+  });
+
+  it("gives up on a request RDW never answers", async () => {
+    server = await fakeServer(() => "hang");
+    await assert.rejects(new RdwClient({ baseUrl: server.url, timeoutMs: 50 }).fetchVehicle("AE01IO"), RdwTimeoutError);
   });
 });
