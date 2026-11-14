@@ -10,7 +10,7 @@ Keep both in sync when a rule changes.
 
 - **App:** RDW (`codes.lucasvdh.rdw`), Homey SDK v3, TypeScript, Node.js runtime.
 - **What it does:** adds a Dutch vehicle as a device by its license plate, shows its APK expiry date, insurance and open-recall status from RDW open data, and fires Flow triggers and notifications when they change.
-- **Platforms:** `local`. Connectivity: `cloud` (one HTTPS request per vehicle per day to the public RDW API; no account, no key).
+- **Platforms:** `local`. Connectivity: `cloud` (two HTTPS requests per vehicle per day to the public RDW API; no account, no key).
 - **Minimum Homey version:** `>=5.0.0`, but the build targets Node 18 (`@tsconfig/node18`). Raising it to `>=12.9.0` and moving to `@tsconfig/node22` is proposed and waits for the maintainer.
 - **Supported languages:** `en, nl`. Every user-facing string exists in both.
 - **Community topic:** https://community.homey.app/t/92575 (`homeyCommunityTopicId` in the manifest).
@@ -24,8 +24,8 @@ App-specific traps (keep this list current, delete examples that do not apply):
 - **RDW values are Dutch strings.** Yes/no fields are `"Ja"`/`"Nee"`, dates are `yyyymmdd`. The `is_insured` and `open_recall_indicator` capabilities expose those raw strings and users' Flows compare them, so changing them to booleans or translated text is a breaking change.
 - **Not every vehicle has an APK date** (mopeds, trailers, some new vehicles). Every field of a record can be missing; parse through `lib/vehicle.ts`.
 - **APK days are calendar days in Homey's timezone** (`homey.clock.getTimezone()`), never `Date#getDate()` or a millisecond difference, which is off by one for most of the day.
-- **The daily triggers fire on every daily check** while their condition holds ("The APK is expired", "The APK expires in N days"); the card hints say so. Keep them at most once per calendar day, also across app restarts.
-- **The RDW API is shared and throttled per IP** without an app token. Poll once a day per vehicle with jitter, back off on failures, and honour `Retry-After`.
+- **The daily triggers fire on every daily check** while their condition holds ("The APK is expired", "The APK expires in N days"); the card hints say so. They run once per calendar day (`lastDailyCheck` in the store), also across app restarts.
+- **The RDW API is shared and throttled per IP** without an app token. Sync twice a day per vehicle with jitter (a 24 h loop drifts past midnight and skips a day), back off on failures, and honour `Retry-After`.
 - **The store app image shows real license plates.** Don't add more, and don't copy it into tests or docs.
 
 ---
