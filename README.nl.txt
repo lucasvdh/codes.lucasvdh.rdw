@@ -1,2 +1,3 @@
-Verbind je Homey met de RDW en krijg direct toegang tot cruciale gegevens van Nederlandse voertuigen via de kentekencheck.
-Ontvang handige meldingen, zoals herinneringen voor de APK, allemaal naadloos geïntegreerd in je Homey.
+Een verlopen APK is snel over het hoofd gezien en kan je een boete kosten. Voeg je auto, motor of ander Nederlands voertuig toe met het kenteken, en Homey houdt het voor je in de gaten met de openbare gegevens van de RDW.
+
+Homey herinnert je op tijd aan de APK, en laat het weten als de verzekering vervalt of de fabrikant een terugroepactie start. Geen account of abonnement nodig, het kenteken is genoeg.
