@@ -47,11 +47,27 @@ Code-level rules for TypeScript Homey apps. For structure and lifecycle see `doc
 
 Code documents itself. Names, types and small functions say what the code does and why it is shaped that way; a reader should not need a comment to follow it.
 
-- Before writing a comment, try to make it unnecessary: rename a variable, extract a function named after the decision (`shouldResetDaily`), introduce a constant with a unit (`RETRY_DELAY_MS`), or use a type instead of a convention.
-- A comment is allowed only when it adds context the code cannot carry and that would otherwise be missing: a device or firmware quirk, the issue number behind a non-obvious choice, something this code must stay in step with, or a deliberate choice that looks like a mistake.
-- Keep comments as short and to the point as possible: one line, two at most. A longer explanation belongs in `docs/development/<topic>.md`, with a link from the code.
-- No comments that restate the code, no bug history ("this used to…", "previously caused…"; that goes in the commit message), no commented-out code, no TODOs without an issue number.
+- Before writing a comment, try to make it unnecessary: rename a variable, extract a function named after the decision (`shouldResetDaily`, `currentOrLowestFanStage`), introduce a constant with a unit (`RETRY_DELAY_MS`), or use a type instead of a convention.
+- A comment is allowed only when it adds context the code cannot carry and that would otherwise be lost: a device or firmware quirk, the issue number behind a non-obvious choice, something this code must stay in step with, or a deliberate choice that looks like a mistake.
+- The test for every comment: delete it, and ask whether a reader loses information they can't get from the code. If not, it stays deleted.
+- Short and to the point: one line, two at most. A longer explanation belongs in `docs/development/<topic>.md`, with a link from the code.
+- This holds for docblocks too. No `/** ... */` that repeats the function name, parameters or return type (`/** Derive the mode from the program. */` above `syncModeFromProgram()`), no docblock on every method out of habit, no "e.g." lists of current callers.
+- No comments that restate the code, no bug history ("this used to…", "previously caused…"; that goes in the commit message), no version numbers that will go stale, no commented-out code, no TODOs without an issue number.
 - When you change code, update or delete the comments next to it. A wrong comment is worse than none.
+- Before you call a change done, read the comments in your own diff once more against these rules.
+
+```ts
+// ❌ restates the code
+/** Called after values are applied, so a driver can update derived capabilities. */
+protected async onValuesApplied(): Promise<void> {}
+
+// ✅ the name says it; no comment
+protected async onValuesApplied(): Promise<void> {}
+
+// ✅ context the code can't carry
+// Not in CAPABILITY_MAP, so syncCapabilities won't add it to hoods paired earlier.
+if (!this.hasCapability("homeconnect_hood_mode")) await this.addCapability("homeconnect_hood_mode");
+```
 
 ---
 
