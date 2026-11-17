@@ -1,2 +1,3 @@
-Connect your Homey with the RDW and gain instant access to crucial information about Dutch vehicles through license plate lookup.
-Receive handy notifications, like reminders for the general periodic inspection (APK), all seamlessly integrated into your Homey.
+An expired APK is easy to miss and can cost you a fine. Add your car, motorcycle or other Dutch vehicle by its license plate, and Homey keeps an eye on it for you using the public data of the RDW.
+
+Homey reminds you in good time before the APK expires, and lets you know when the insurance lapses or the manufacturer issues a recall. No account or subscription needed, the license plate is all it takes.
