@@ -96,7 +96,7 @@ Details, examples and the exceptions: `docs/architecture-conventions.md`.
 - File names: kebab-case in `lib/`. Driver ids and folders are `snake_case` or `kebab-case` without spaces; driver display names use spaces.
 - Dependencies: prefer Node built-ins (`fetch`, `https`, `crypto`). No `node-fetch` (it breaks on Node 22). No native addons. Every new runtime dependency needs a reason in the PR.
 - Logging: `this.log` for context that helps a diagnostic report, `this.error` for failures. Prefix log lines with a context tag (`[poller]`, `[pair]`). Never log secrets, tokens, PINs or full credentials.
-- Code documents itself: names, types and small well-named functions instead of explanations. Add a comment only when it adds context the code cannot express and that would otherwise be missing (a device quirk, an issue number, a deliberate choice that looks wrong). Keep it as short as possible, one or two lines. No bug history in comments; that goes in the commit.
+- **Code documents itself.** Names, types and small well-named functions instead of explanations. A comment (docblocks included) is allowed only when it adds context that would otherwise be lost: a device quirk, an issue number, a deliberate choice that looks wrong. One or two lines, brief and to the point. No comments that restate the code, no bug history (that goes in the commit). Check the comments in your own diff before you call a change done.
 - No em-dashes (—) in user-facing text, changelogs or forum posts. Use a comma, a hyphen, or two sentences.
 
 Details: `docs/coding-standards.md`.
@@ -188,6 +188,7 @@ Details: `docs/release-process.md`.
 - ❌ Renaming a Flow card id, argument name, capability id, setting key or driver id → add a new one and deprecate the old one.
 - ❌ IP addresses in `data` → `store` or settings, refreshed by discovery.
 - ❌ Throwing errors as control flow ("no token configured") → return a typed result.
+- ❌ A comment or docblock that repeats what the name already says → delete it, or improve the name.
 - ❌ Copying dead boilerplate between apps (a `remote.ts` nobody imports, unused `node-fetch`).
 - ❌ Fixed localhost ports in tests → listen on port `0`.
 - ❌ Real user data in fixtures → sanitize.
